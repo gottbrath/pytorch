@@ -5,14 +5,13 @@ from .observer import default_observer
 from functools import partial
 
 class FakeQuantize(Module):
-    ''' Simulate the quantize and dequantize operations in training time.
-    Args:
-        `qconfig`: object that encodes configuration info for quantization
-        `observer_module`: Observer module that records stats of weights and
-        activations
-        `calcqparam`: A function that calculates quantization parameters
-        given the stats
-    '''
+    """ Simulate the quantize and dequantize operations in training time.
+
+   Args:
+      qconfig: object that encodes configuration info for quantization
+      observer_module: Observer module that records stats of weights and activations
+      calcqparam: A function that calculates quantization parameters given the stats
+    """
 
     def __init__(self, dtype=torch.quint8, qscheme=torch.per_tensor_affine,
                  quant_min=0, quant_max=255):
