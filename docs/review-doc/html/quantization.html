@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torch.quantization &mdash; PyTorch master documentation</title>
+  <title>PyTorch Quantization &mdash; PyTorch master documentation</title>
   
 
   
@@ -201,7 +201,8 @@
 <li class="toctree-l1"><a class="reference internal" href="nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="optim.html">torch.optim</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">torch.quantization</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PyTorch Quantization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#module-torch.quantization">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
@@ -259,7 +260,7 @@
       </li>
 
         
-      <li>torch.quantization</li>
+      <li>PyTorch Quantization</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -291,7 +292,148 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="module-torch.quantization">
+  <div class="section" id="pytorch-quantization">
+<h1>PyTorch Quantization<a class="headerlink" href="#pytorch-quantization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction-to-quantization">
+<h2>Introduction to Quantization<a class="headerlink" href="#introduction-to-quantization" title="Permalink to this headline">¶</a></h2>
+<p>A quantized model executes some or all of the operations on tensors with
+integer rather than floating point values. This allows for a more
+compact model representation and the use of high performance vectorized
+operations on many hardware platforms. PyTorch supports INT8
+quantization and the typical tensor uses FP32 so the memory needed to
+keep weights and activations is reduced by a factor of up to 4. Hardware
+implementations vary but can be anywhere from 2 to 4 times faster at the
+level of the vector instructions.</p>
+<div class="section" id="quantized-representation">
+<h3>Quantized representation<a class="headerlink" href="#quantized-representation" title="Permalink to this headline">¶</a></h3>
+<p>PyTorch supports both per tensor and per channel asymmetric linear
+quantization. Per tensor means that all the values within the tensor are
+scaled the same way. Per channel means that for each channel the values
+in the tensor are scaled and offset by a different value (effectively
+the scale and offset become vectors). Note that we currently only
+support per channel quantization for the <strong>conv</strong> and <strong>linear</strong>
+operators. Furthermore the minimum and the maximum of the input data is
+mapped linearly to the minimum and the maximum of the quantized data
+type such that zero is represented with no quantization error.</p>
+<p>The mapping is performed by converting the floating point tensors using</p>
+<p><strong>*include image of the formula from the design doc here*</strong></p>
+<p>Note that for operators, we restrict support to:</p>
+<ol class="arabic simple">
+<li><p>8 bit weights (data_type = qint8)</p></li>
+<li><p>8 bit activations (data_type = quint8)</p></li>
+<li><p>32 bit, symmetric quantization for bias (zero_point = 0, data_type
+= qint32)</p></li>
+</ol>
+</div>
+<div class="section" id="quantized-tensor">
+<h3>Quantized Tensor<a class="headerlink" href="#quantized-tensor" title="Permalink to this headline">¶</a></h3>
+<p>In order to do quantization in PyTorch, we need to be able to represent
+quantized data in Tensors. A quantized Tensor allows for storing
+quantized data (represented as int8/uint8/int32) along with quantization
+parameters like scale and zero_point. Quantized tensors allow for many
+useful operations making quantized arithmetic easy, in addition to
+allowing for serialization of data in a quantized format.</p>
+</div>
+</div>
+<div class="section" id="supported-quantization-techniques">
+<h2>Supported Quantization Techniques<a class="headerlink" href="#supported-quantization-techniques" title="Permalink to this headline">¶</a></h2>
+<p>PyTorch supports three approaches to quantize models.</p>
+<ol class="arabic simple">
+<li><p>Dynamic Quantization: This is the simplest to apply form of
+quantization where the weights are quantized ahead of time but the
+activations are dynamically scaled during the inference. This is used
+for situations where the model execution time is dominated by loading
+weights from memory rather than computing the matrix multiplications.
+Typically this is in LSTM and Transformer type models with small
+batch size. Applying dynamic quantization to a whole model can be
+done with a single call to torch.quantization.quantize_dynamic().
+See the <strong>*tutorial-link-here*</strong><a href="#id1"><span class="problematic" id="id2">*</span></a>. *</p></li>
+<li><p>Post Training Quantization: This is the most commonly used form of
+quantization where the weights are quantized ahead of time and the
+scale factor and bias for the activation tensors is pre-computed
+based on observing the behavior of the model during a calibration
+process. Post Training Quantization is typically used for CNNs or any
+other model that is compute bound. The general process for doing post
+training quantization is:</p>
+<ol class="arabic simple">
+<li><p>Prepare the model itself by adding quantize and dequantize nodes,
+making sure layers are not reused and performing fusions such as
+conv + relu.</p></li>
+<li><p>Specify the configuration of the quantization methods — such as
+selecting symmetric or asymmetric quantization and MinMax or
+L2Norm calibration techniques.</p></li>
+<li><p>Use the torch.quantization.prepare() method to insert functions
+that will observe activation tensors during calibration</p></li>
+<li><p>Calibrate the model by running inference against a calibration
+dataset</p></li>
+<li><p>Finally, convert the model itself with the
+torch.quantization.convert() method. This does several things: it
+quantizes the weights, computes and stores the scale and bias
+value to be used each activation tensor, and replaces key
+operators quantized implementations.</p></li>
+<li><p>See the <strong>*tutorial-link-here *</strong>for more information<a href="#id3"><span class="problematic" id="id4">*</span></a>. *</p></li>
+</ol>
+</li>
+<li><p>Quantization Aware Training: In the rare cases where post training
+quantization does not provide adequate accuracy training can be done
+with simulated quantization using the <strong>FakeQuant</strong>(). Computations
+will take place in FP32 but with values clamped and rounded to
+simulate the effects of INT8 quantization. The sequence of steps is
+very similar.</p>
+<ol class="arabic simple">
+<li><p>Prepare the model itself by adding quantize and dequantize nodes,
+making sure layers are not reused and performing fusions such as
+conv + relu.</p></li>
+<li><p>Specify the configuration of the quantization methods — such as
+selecting symmetric or asymmetric quantization and MinMax or
+L2Norm calibration techniques.</p></li>
+<li><p>Use the torch.quantization.FakeQuant() method to insert functions
+that will simulate quantization during training.</p></li>
+<li><p>Train or fine tune the model.</p></li>
+<li><p>Finally, convert the model itself with the
+torch.quantization.convert() method. This does several things: it
+quantizes the weights, computes and stores the scale and bias
+value to be used each activation tensor, and replaces key
+operators quantized implementations.</p></li>
+<li><p>See the <strong>*tutorial-link-here *</strong>for more information<a href="#id5"><span class="problematic" id="id6">*</span></a>. *</p></li>
+</ol>
+</li>
+</ol>
+<p>While functions to select the scale factor and bias based on observed
+tensor data are provided, developers can provide your own quantization
+functions. Quantization can be applied selectively to different parts of
+the model or configured differently for different portions of the model.</p>
+<p>We also provide support for per channel quantization for <strong>conv2d</strong>()
+and <strong>linear</strong>()</p>
+</div>
+<div class="section" id="code-structure">
+<h2>Code Structure<a class="headerlink" href="#code-structure" title="Permalink to this headline">¶</a></h2>
+<p>The code is organized into the following sections</p>
+<ul class="simple">
+<li><p>torch.quantization : this module implements the functions you call
+directly to convert your model from FP32 to quantized form. For
+example the <strong>prepare() **method is used in post training
+quantization to prepares your model for the calibration step and the
+**convert()</strong> method actually converts the weights to int8 and
+replaces the operations with their quantized counterparts. There are
+other helper functions for things like quantizing the input to your
+model and performing critical fusions like conv+relu.</p></li>
+<li><p>torch.nn.quantized: This module implements the quantized
+implementations of the nn functions such as <strong>conv2d()</strong> and
+<strong>ReLU()</strong>. It also contains the functions to convert tensors to and
+from quantized form.</p></li>
+<li><p>torch.nn.qat.modules: This module implements versions of the key nn
+functions <strong>conv2d</strong>() and <strong>linear</strong>() which will run in FP32
+but with rounding applied to simulate the effect of INT8
+quantization.</p></li>
+<li><p>torch.nn.intrinsic.quantized.modules: This module implements the
+quantized implementations of fused operations like conv + relu.</p></li>
+<li><p>torch.nn.intrinsic.qat.modules: This module implements the versions
+of those fused operations needed for quantization aware training.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="module-torch.quantization">
 <span id="torch-quantization"></span><h1>torch.quantization<a class="headerlink" href="#module-torch.quantization" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="initialization">
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
@@ -449,7 +591,7 @@ min/max values. calculate_qparams will calculate scale and zero_point</p>
 <dt id="torch.quantization.NoopObserver">
 <em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">NoopObserver</code><span class="sig-paren">(</span><em class="sig-param">dtype=torch.float16</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/observer.html#NoopObserver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.NoopObserver" title="Permalink to this definition">¶</a></dt>
 <dd><p>Observer that doesn’t do anything and just passes its configuration to the
-quantized module’s <a href="#id1"><span class="problematic" id="id2">``</span></a>.from_float()`.</p>
+quantized module’s <a href="#id7"><span class="problematic" id="id8">``</span></a>.from_float()`.</p>
 <p>Primarily used for quantization to float16 which doesn’t require determining
 ranges.</p>
 </dd></dl>
@@ -775,8 +917,8 @@ to align with post training flow, TODO: rename?</p></li>
 </div>
 <div class="section" id="module-torch.nn._intrinsic.quantized.modules">
 <span id="torch-nn-intrinsic-quantized-modules"></span><h1>torch.nn._intrinsic.quantized.modules<a class="headerlink" href="#module-torch.nn._intrinsic.quantized.modules" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id3">
-<h2>ConvReLU2d<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id9">
+<h2>ConvReLU2d<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.nn._intrinsic.quantized.modules.ConvReLU2d">
 <em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.quantized.modules.</code><code class="sig-name descname">ConvReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">padding_mode='zeros'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/quantized/modules/conv_relu.html#ConvReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.quantized.modules.ConvReLU2d" title="Permalink to this definition">¶</a></dt>
@@ -790,8 +932,8 @@ to align with post training flow, TODO: rename?</p></li>
 </dd></dl>
 
 </div>
-<div class="section" id="id4">
-<h2>LinearReLU<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h2>LinearReLU<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.nn._intrinsic.quantized.modules.LinearReLU">
 <em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.quantized.modules.</code><code class="sig-name descname">LinearReLU</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/quantized/modules/linear_relu.html#LinearReLU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.quantized.modules.LinearReLU" title="Permalink to this definition">¶</a></dt>
@@ -995,8 +1137,8 @@ several quantized input planes.</p>
 </dd></dl>
 
 <span class="target" id="module-torch.nn.quantized.dynamic.modules"></span></div>
-<div class="section" id="id5">
-<h2>Linear<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id11">
+<h2>Linear<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.nn.quantized.dynamic.modules.Linear">
 <em class="property">class </em><code class="sig-prename descclassname">torch.nn.quantized.dynamic.modules.</code><code class="sig-name descname">Linear</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias_=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/quantized/dynamic/modules/linear.html#Linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.dynamic.modules.Linear" title="Permalink to this definition">¶</a></dt>
@@ -1119,8 +1261,8 @@ dimensions</p></li>
 
 <span class="target" id="module-torch.nn.quantized.modules.conv"></span><p>Quantized convolution modules.</p>
 </div>
-<div class="section" id="id6">
-<h2>Conv2d<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id12">
+<h2>Conv2d<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.nn.quantized.modules.conv.Conv2d">
 <em class="property">class </em><code class="sig-prename descclassname">torch.nn.quantized.modules.conv.</code><code class="sig-name descname">Conv2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">padding_mode='zeros'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/quantized/modules/conv.html#Conv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.modules.conv.Conv2d" title="Permalink to this definition">¶</a></dt>
@@ -1275,8 +1417,8 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 </dd></dl>
 
 </div>
-<div class="section" id="id7">
-<h2>Linear<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id13">
+<h2>Linear<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -1323,7 +1465,17 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">torch.quantization</a><ul>
+<li><a class="reference internal" href="#">PyTorch Quantization</a><ul>
+<li><a class="reference internal" href="#introduction-to-quantization">Introduction to Quantization</a><ul>
+<li><a class="reference internal" href="#quantized-representation">Quantized representation</a></li>
+<li><a class="reference internal" href="#quantized-tensor">Quantized Tensor</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-quantization-techniques">Supported Quantization Techniques</a></li>
+<li><a class="reference internal" href="#code-structure">Code Structure</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-torch.quantization">torch.quantization</a><ul>
 <li><a class="reference internal" href="#initialization">Initialization</a></li>
 <li><a class="reference internal" href="#fake-quantize">Fake Quantize</a></li>
 <li><a class="reference internal" href="#fuse-modules">Fuse Modules</a></li>
@@ -1348,8 +1500,8 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 </ul>
 </li>
 <li><a class="reference internal" href="#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a><ul>
-<li><a class="reference internal" href="#id3">ConvReLU2d</a></li>
-<li><a class="reference internal" href="#id4">LinearReLU</a></li>
+<li><a class="reference internal" href="#id9">ConvReLU2d</a></li>
+<li><a class="reference internal" href="#id10">LinearReLU</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-torch.nn.qat.modules">torch.nn.qat.modules</a><ul>
@@ -1359,16 +1511,16 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 </li>
 <li><a class="reference internal" href="#module-torch.nn.quantized.functional">torch.nn.quantized</a><ul>
 <li><a class="reference internal" href="#functional-interface">Functional interface</a></li>
-<li><a class="reference internal" href="#id5">Linear</a></li>
+<li><a class="reference internal" href="#id11">Linear</a></li>
 <li><a class="reference internal" href="#module-torch.nn.quantized.modules.activation">RNNBase</a></li>
 <li><a class="reference internal" href="#relu">ReLU</a></li>
 <li><a class="reference internal" href="#relu6">ReLU6</a></li>
-<li><a class="reference internal" href="#id6">Conv2d</a></li>
+<li><a class="reference internal" href="#id12">Conv2d</a></li>
 <li><a class="reference internal" href="#float-functional">Float Functional</a></li>
 <li><a class="reference internal" href="#qfunctional">QFunctional</a></li>
 <li><a class="reference internal" href="#quantize">Quantize</a></li>
 <li><a class="reference internal" href="#dequantize">DeQuantize</a></li>
-<li><a class="reference internal" href="#id7">Linear</a></li>
+<li><a class="reference internal" href="#id13">Linear</a></li>
 </ul>
 </li>
 </ul>
