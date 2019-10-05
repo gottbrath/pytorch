@@ -199,7 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html">torch.quantization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html">Quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../storage.html">torch.Storage</a></li>
@@ -296,7 +296,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn.modules</span> <span class="k">import</span> <span class="n">Module</span>
 <span class="kn">from</span> <span class="nn">torch.nn.quantized.modules.utils</span> <span class="k">import</span> <span class="n">_quantize_weight</span>
 
-<div class="viewcode-block" id="Quantize"><a class="viewcode-back" href="../../../../../quantization.html#torch.nn.quantized.modules.linear.Quantize">[docs]</a><span class="k">class</span> <span class="nc">Quantize</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Quantize"><a class="viewcode-back" href="../../../../../quantization.tmp.html#torch.nn.quantized.modules.linear.Quantize">[docs]</a><span class="k">class</span> <span class="nc">Quantize</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Quantizes an incoming tensor</span>
 <span class="sd">    Args:</span>
 <span class="sd">     `out_scale`: scale of the output Quantized Tensor</span>
@@ -335,7 +335,7 @@
     <span class="k">def</span> <span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;scale=</span><span class="si">{}</span><span class="s1">, zero_point=</span><span class="si">{}</span><span class="s1">, dtype=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DeQuantize"><a class="viewcode-back" href="../../../../../quantization.html#torch.nn.quantized.modules.linear.DeQuantize">[docs]</a><span class="k">class</span> <span class="nc">DeQuantize</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="DeQuantize"><a class="viewcode-back" href="../../../../../quantization.tmp.html#torch.nn.quantized.modules.linear.DeQuantize">[docs]</a><span class="k">class</span> <span class="nc">DeQuantize</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dequantizes an incoming tensor</span>
 
 <span class="sd">    Examples::</span>
