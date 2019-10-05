@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../storage.html">torch.Storage</a></li>
@@ -296,8 +291,9 @@
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic.modules.fused</span> <span class="k">as</span> <span class="nn">torch_fused</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic.modules.fused</span> <span class="k">as</span> <span class="nn">torch_fused</span>
 
 <span class="k">def</span> <span class="nf">fuse_conv_bn</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">bn</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Given the conv and bn modules, fuses them and returns the fused module</span>
@@ -320,7 +316,7 @@
         <span class="k">assert</span> <span class="n">bn</span><span class="o">.</span><span class="n">num_features</span> <span class="o">==</span> <span class="n">conv</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="s1">&#39;Output channel of Conv2d must match num_features of BatchNorm2d&#39;</span>
         <span class="k">assert</span> <span class="n">bn</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="s1">&#39;Only support fusing BatchNorm2d with affine set to True&#39;</span>
         <span class="k">assert</span> <span class="n">bn</span><span class="o">.</span><span class="n">track_running_stats</span><span class="p">,</span> <span class="s1">&#39;Only support fusing BatchNorm2d with tracking_running_stats set to True&#39;</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">_intrinsic</span><span class="o">.</span><span class="n">ConvBn2d</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">bn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">ConvBn2d</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">bn</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fuse_conv_bn_eval</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">bn</span><span class="p">)</span>
 
@@ -347,44 +343,78 @@
         <span class="k">return</span> <span class="n">torch_fused</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">(</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fusion</span><span class="o">.</span><span class="n">fuse_conv_bn_eval</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">bn</span><span class="p">),</span> <span class="n">relu</span><span class="p">)</span>
 
+<span class="c1"># Generalization of getattr</span>
+<span class="k">def</span> <span class="nf">_get_module</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">submodule_key</span><span class="p">):</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">submodule_key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="n">cur_mod</span> <span class="o">=</span> <span class="n">model</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="n">cur_mod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cur_mod</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cur_mod</span>
 
-<span class="k">def</span> <span class="nf">_fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">named_module_dict</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">,</span> <span class="n">fuser_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">modules_to_fuse</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules_to_fuse</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">),</span>\
-        <span class="s2">&quot;Can fuse only 2 or 3 modules.&quot;</span>
+<span class="c1"># Generalization of setattr</span>
+<span class="k">def</span> <span class="nf">_set_module</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">submodule_key</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">submodule_key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="n">sub_tokens</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">cur_mod</span> <span class="o">=</span> <span class="n">model</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sub_tokens</span><span class="p">:</span>
+        <span class="n">cur_mod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cur_mod</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
 
-    <span class="n">OP_LIST_TO_FUSER_FUNC</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">cur_mod</span><span class="p">,</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">module</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">fuse_known_modules</span><span class="p">(</span><span class="n">mod_list</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a list of modules that fuses the operations specified</span>
+<span class="sd">     in the input module list.</span>
+
+<span class="sd">    Fuses only the following sequence of modules:</span>
+<span class="sd">    conv, bn</span>
+<span class="sd">    conv, bn, relu</span>
+<span class="sd">    conv, relu</span>
+<span class="sd">    linear, relu</span>
+<span class="sd">    For these sequences, the first element in the output module list performs</span>
+<span class="sd">    the fused operation. The rest of the elements are set to nn.Identity()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">OP_LIST_TO_FUSER_METHOD</span> <span class="o">=</span> <span class="p">{</span>
         <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">):</span> <span class="n">fuse_conv_bn</span><span class="p">,</span>
-        <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">):</span> <span class="n">fuse_conv_bn_relu</span>
+        <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">):</span> <span class="n">fuse_conv_bn_relu</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">):</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">):</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">LinearReLU</span>
     <span class="p">}</span>
 
-    <span class="n">mod</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">parent_mod</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">modules_to_fuse</span><span class="p">)):</span>
-        <span class="n">parent_module_name</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">modules_to_fuse</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">mod</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">named_module_dict</span><span class="p">[</span><span class="n">modules_to_fuse</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
-        <span class="n">parent_mod</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">named_module_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parent_module_name</span><span class="p">,</span> <span class="n">model</span><span class="p">))</span>
+    <span class="n">types</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mod_list</span><span class="p">)</span>
+    <span class="n">fuser_method</span> <span class="o">=</span> <span class="n">OP_LIST_TO_FUSER_METHOD</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fuser_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cannot fuse modules: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">types</span><span class="p">))</span>
+    <span class="n">new_mod</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">mod_list</span><span class="p">)</span>
+    <span class="n">new_mod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">fuser_method</span><span class="p">(</span><span class="o">*</span><span class="n">mod_list</span><span class="p">)</span>
 
-    <span class="n">new_mod</span> <span class="o">=</span> <span class="n">mod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">fuser_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">types</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mod</span><span class="p">)</span>
-        <span class="n">fuser_func</span> <span class="o">=</span> <span class="n">OP_LIST_TO_FUSER_FUNC</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">fuser_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cannot fuse modules: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">types</span><span class="p">))</span>
-    <span class="n">new_mod</span> <span class="o">=</span> <span class="n">fuser_func</span><span class="p">(</span><span class="o">*</span><span class="n">mod</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mod_list</span><span class="p">)):</span>
+        <span class="n">new_mod</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+        <span class="n">new_mod</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">training</span> <span class="o">=</span> <span class="n">mod_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">training</span>
 
-    <span class="c1"># Assign new_mod to module and set remaining modules to identity</span>
-    <span class="k">if</span> <span class="n">new_mod</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">mod</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="n">parent_mod</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">modules_to_fuse</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">new_mod</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules_to_fuse</span><span class="p">)):</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">parent_mod</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">modules_to_fuse</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">new_mod</span>
 
+<span class="k">def</span> <span class="nf">_fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">,</span> <span class="n">fuser_func</span><span class="o">=</span><span class="n">fuse_known_modules</span><span class="p">):</span>
 
-<div class="viewcode-block" id="fuse_modules"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.fuse_modules">[docs]</a><span class="k">def</span> <span class="nf">fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">):</span>
+    <span class="n">mod_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">modules_to_fuse</span><span class="p">:</span>
+        <span class="n">mod_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_get_module</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span>
+
+    <span class="c1"># Fuse list of modules</span>
+    <span class="n">new_mod_list</span> <span class="o">=</span> <span class="n">fuser_func</span><span class="p">(</span><span class="n">mod_list</span><span class="p">)</span>
+
+    <span class="c1"># Replace original module list with fused module list</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">modules_to_fuse</span><span class="p">):</span>
+        <span class="n">_set_module</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">new_mod_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+<div class="viewcode-block" id="fuse_modules"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.fuse_modules">[docs]</a><span class="k">def</span> <span class="nf">fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fuser_func</span><span class="o">=</span><span class="n">fuse_known_modules</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fuses a list of modules into a single module</span>
 
 <span class="sd">    Fuses only the following sequence of modules:</span>
 <span class="sd">    conv, bn</span>
 <span class="sd">    conv, bn, relu</span>
+<span class="sd">    conv, relu</span>
+<span class="sd">    linear, relu</span>
 <span class="sd">    All other sequences are left unchanged.</span>
 <span class="sd">    For these sequences, replaces the first item in the list</span>
 <span class="sd">    with the fused module, replacing the rest of the modules</span>
@@ -392,23 +422,43 @@
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        model: Model containing the modules to be fused</span>
-<span class="sd">        modules_to_fuse: list of list of module names to fuse.</span>
-
+<span class="sd">        modules_to_fuse: list of list of module names to fuse. Can also be a list</span>
+<span class="sd">                         of strings if there is only a single list of modules to fuse.</span>
+<span class="sd">        inplace: bool specifying if fusion happens in place on the model, by default</span>
+<span class="sd">                 a new model is returned</span>
+<span class="sd">        fuser_func: Function that takes in a list of modules and outputs a list of fused modules</span>
+<span class="sd">                    of the same length. For example,</span>
+<span class="sd">                    fuser_func([convModule, BNModule]) returns the list [ConvBNModule, nn.Identity()]</span>
+<span class="sd">                    Defaults to torch.quantization.fuse_known_modules</span>
 <span class="sd">    Returns:</span>
-<span class="sd">        Modifies the model in place.</span>
+<span class="sd">        model with fused modules. A new copy is created if inplace=True.</span>
 
 <span class="sd">    Examples::</span>
 
 <span class="sd">            &gt;&gt;&gt; m = myModel()</span>
 <span class="sd">            &gt;&gt;&gt; # m is a module containing  the sub-modules below</span>
 <span class="sd">            &gt;&gt;&gt; modules_to_fuse = [ [&#39;conv1&#39;, &#39;bn1&#39;, &#39;relu1&#39;], [&#39;submodule.conv&#39;, &#39;submodule.relu&#39;]]</span>
-<span class="sd">            &gt;&gt;&gt; nn.quantization.fuse_module.fuse_module(m, modules_to_fuse)</span>
-<span class="sd">            &gt;&gt;&gt; output = m(input)</span>
+<span class="sd">            &gt;&gt;&gt; fused_m = torch.quantization.fuse_modules(m, modules_to_fuse)</span>
+<span class="sd">            &gt;&gt;&gt; output = fused_m(input)</span>
+
+<span class="sd">            &gt;&gt;&gt; m = myModel()</span>
+<span class="sd">            &gt;&gt;&gt; # Alternately provide a single list of modules to fuse</span>
+<span class="sd">            &gt;&gt;&gt; modules_to_fuse = [&#39;conv1&#39;, &#39;bn1&#39;, &#39;relu1&#39;]</span>
+<span class="sd">            &gt;&gt;&gt; fused_m = torch.quantization.fuse_modules(m, modules_to_fuse)</span>
+<span class="sd">            &gt;&gt;&gt; output = fused_m(input)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">named_module_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">mod</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">()}</span>
-    <span class="k">for</span> <span class="n">module_list</span> <span class="ow">in</span> <span class="n">modules_to_fuse</span><span class="p">:</span>
-        <span class="n">_fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">named_module_dict</span><span class="p">,</span> <span class="n">module_list</span><span class="p">)</span></div>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">module_element</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">module_element</span> <span class="ow">in</span> <span class="n">modules_to_fuse</span><span class="p">):</span>
+        <span class="c1"># Handle case of modules_to_fuse being a list</span>
+        <span class="n">_fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">,</span> <span class="n">fuser_func</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Handle case of modules_to_fuse being a list of lists</span>
+        <span class="k">for</span> <span class="n">module_list</span> <span class="ow">in</span> <span class="n">modules_to_fuse</span><span class="p">:</span>
+            <span class="n">_fuse_modules</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">module_list</span><span class="p">,</span> <span class="n">fuser_func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
 </pre></div>
 
              </article>

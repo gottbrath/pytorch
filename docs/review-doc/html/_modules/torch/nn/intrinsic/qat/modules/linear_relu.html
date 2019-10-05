@@ -9,14 +9,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torch.nn._intrinsic.quantized.modules.linear_relu &mdash; PyTorch master documentation</title>
+  <title>torch.nn.intrinsic.qat.modules.linear_relu &mdash; PyTorch master documentation</title>
   
 
   
   
   
   
-    <link rel="canonical" href="https://pytorch.org/docs/stable/_modules/torch/nn/_intrinsic/quantized/modules/linear_relu.html"/>
+    <link rel="canonical" href="https://pytorch.org/docs/stable/_modules/torch/nn/intrinsic/qat/modules/linear_relu.html"/>
   
 
   
@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -152,7 +152,7 @@
 
           
 <div>
-  <a style="color:#F05732" href="https://pytorch.org/docs/stable/_modules/torch/nn/_intrinsic/quantized/modules/linear_relu.html">
+  <a style="color:#F05732" href="https://pytorch.org/docs/stable/_modules/torch/nn/intrinsic/qat/modules/linear_relu.html">
     You are viewing unstable developer preview docs.
     Click here to view docs for latest stable release.
   </a>
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../storage.html">torch.Storage</a></li>
@@ -262,7 +257,7 @@
         
           <li><a href="../../../../../torch.html">torch</a> &gt;</li>
         
-      <li>torch.nn._intrinsic.quantized.modules.linear_relu</li>
+      <li>torch.nn.intrinsic.qat.modules.linear_relu</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -290,44 +285,48 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torch.nn._intrinsic.quantized.modules.linear_relu</h1><div class="highlight"><pre>
+  <h1>Source code for torch.nn.intrinsic.qat.modules.linear_relu</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
-<span class="kn">import</span> <span class="nn">torch.nn.quantized</span> <span class="k">as</span> <span class="nn">nnq</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic</span>
-<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.qat</span> <span class="k">as</span> <span class="nn">nnqat</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 
-<div class="viewcode-block" id="LinearReLU"><a class="viewcode-back" href="../../../../../../quantization.html#torch.nn._intrinsic.quantized.modules.LinearReLU">[docs]</a><span class="k">class</span> <span class="nc">LinearReLU</span><span class="p">(</span><span class="n">nnq</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+<div class="viewcode-block" id="LinearReLU"><a class="viewcode-back" href="../../../../../../quantization.html#torch.nn.intrinsic.qat.modules.LinearReLU">[docs]</a><span class="k">class</span> <span class="nc">LinearReLU</span><span class="p">(</span><span class="n">nnqat</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A LinearReLU module fused from Linear and ReLU modules</span>
+<span class="sd">    A LinearReLU module fused from Linear and ReLU modules, attached with</span>
+<span class="sd">    FakeQuantize modules for output activation and weight, used in</span>
+<span class="sd">    quantization aware training.</span>
 
-<span class="sd">    We adopt the same interface as :class:`torch.nn.quantized.Linear`.</span>
+<span class="sd">    We adopt the same interface as :class:`torch.nn.Linear`.</span>
+
+<span class="sd">    Similar to `torch.nn.intrinsic.LinearReLU`, with FakeQuantize modules initialized to</span>
+<span class="sd">    default.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        Same as torch.nn.quantized.Linear</span>
+<span class="sd">        observer: fake quant module for output activation, it&#39;s called observer</span>
+<span class="sd">            to align with post training flow, TODO: rename?</span>
+<span class="sd">        weight: fake quant module for weight</span>
 
 <span class="sd">    Examples::</span>
 
-<span class="sd">        &gt;&gt;&gt; m = nn._intrinsic.LinearReLU(20, 30)</span>
+<span class="sd">        &gt;&gt;&gt; m = nn.qat.LinearReLU(20, 30)</span>
 <span class="sd">        &gt;&gt;&gt; input = torch.randn(128, 20)</span>
 <span class="sd">        &gt;&gt;&gt; output = m(input)</span>
 <span class="sd">        &gt;&gt;&gt; print(output.size())</span>
 <span class="sd">        torch.Size([128, 30])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_FLOAT_MODULE</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">_intrinsic</span><span class="o">.</span><span class="n">LinearReLU</span>
+    <span class="n">_FLOAT_MODULE</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">LinearReLU</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">LinearReLU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">bias</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">qconfig</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LinearReLU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">qconfig</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
-        <span class="n">Y_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">linear_relu</span><span class="p">(</span>
-            <span class="nb">input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_packed_params</span><span class="p">,</span>
-            <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">),</span>
-            <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">Y_q</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_fake_quant</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">)))</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LinearReLU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">from_float</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="nf">from_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mod</span><span class="p">,</span> <span class="n">qconfig</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LinearReLU</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">from_float</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">qconfig</span><span class="p">)</span></div>
 </pre></div>
 
              </article>

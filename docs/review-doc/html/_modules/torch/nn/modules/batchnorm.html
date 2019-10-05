@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../storage.html">torch.Storage</a></li>
@@ -301,8 +296,6 @@
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">init</span>
 
 
-<span class="c1"># TODO: check contiguous in THNN</span>
-<span class="c1"># TODO: use separate backend functions?</span>
 <span class="k">class</span> <span class="nc">_BatchNorm</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="n">_version</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">__constants__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;track_running_stats&#39;</span><span class="p">,</span> <span class="s1">&#39;momentum&#39;</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;bias&#39;</span><span class="p">,</span>

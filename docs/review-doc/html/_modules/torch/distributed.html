@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../storage.html">torch.Storage</a></li>
@@ -313,8 +308,8 @@
     <span class="c1"># this.</span>
     <span class="kn">from</span> <span class="nn">.distributed_c10d</span> <span class="k">import</span> <span class="n">_backend</span>  <span class="c1"># noqa: F401</span>
     <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">.rpc</span> <span class="k">import</span> <span class="n">_init_rpc</span>
-        <span class="kn">from</span> <span class="nn">.rpc</span> <span class="k">import</span> <span class="o">*</span>  <span class="c1"># noqa: F401</span>
+        <span class="kn">from</span> <span class="nn">.rpc_api</span> <span class="k">import</span> <span class="n">_init_rpc</span>
+        <span class="kn">from</span> <span class="nn">.rpc_api</span> <span class="k">import</span> <span class="o">*</span>  <span class="c1"># noqa: F401</span>
 
         <span class="k">def</span> <span class="nf">init_model_parallel</span><span class="p">(</span><span class="n">self_name</span><span class="p">,</span>
                                 <span class="n">backend</span><span class="o">=</span><span class="n">RpcBackend</span><span class="o">.</span><span class="n">PROCESS_GROUP</span><span class="p">,</span>
@@ -346,8 +341,8 @@
 <span class="sd">                num_send_recv_threads(int): Number of threads for send/recv work.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">_init_rpc</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">self_name</span><span class="p">,</span> <span class="n">self_rank</span><span class="p">,</span> <span class="n">init_method</span><span class="p">,</span> <span class="n">num_send_recv_threads</span><span class="p">)</span>
-            <span class="kn">from</span> <span class="nn">.rpc</span> <span class="k">import</span> <span class="n">_agent</span>
-            <span class="n">autograd</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">_agent</span><span class="o">.</span><span class="n">get_worker_id</span><span class="p">()</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="kn">from</span> <span class="nn">.rpc_api</span> <span class="k">import</span> <span class="n">_agent</span>
+            <span class="n">autograd</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">_agent</span><span class="o">.</span><span class="n">get_worker_info</span><span class="p">()</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 </pre></div>
 
              </article>

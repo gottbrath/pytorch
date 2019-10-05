@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../storage.html">torch.Storage</a></li>
@@ -334,6 +329,9 @@
         <span class="n">Y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">linear_dynamic</span><span class="p">(</span>
             <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_packed_params</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;DynamicQuantizedLinear&#39;</span>
 
 <div class="viewcode-block" id="Linear.from_float"><a class="viewcode-back" href="../../../../../../quantization.html#torch.nn.quantized.dynamic.modules.Linear.from_float">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>

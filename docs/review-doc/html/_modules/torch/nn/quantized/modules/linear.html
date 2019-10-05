@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../storage.html">torch.Storage</a></li>
@@ -295,11 +290,11 @@
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">torch._jit_internal</span> <span class="k">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">torch._jit_internal</span> <span class="k">import</span> <span class="n">Optional</span>  <span class="c1"># noqa: F401</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic</span> <span class="k">as</span> <span class="nn">nni</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic</span> <span class="k">as</span> <span class="nn">nni</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules</span> <span class="k">import</span> <span class="n">Module</span>
-
+<span class="kn">from</span> <span class="nn">torch.nn.quantized.modules.utils</span> <span class="k">import</span> <span class="n">_quantize_weight</span>
 
 <div class="viewcode-block" id="Quantize"><a class="viewcode-back" href="../../../../../quantization.html#torch.nn.quantized.modules.linear.Quantize">[docs]</a><span class="k">class</span> <span class="nc">Quantize</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Quantizes an incoming tensor</span>
@@ -410,9 +405,11 @@
             <span class="p">[</span><span class="n">out_features</span><span class="p">,</span> <span class="n">in_features</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">zero_point</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_weight_bias</span><span class="p">(</span><span class="n">qweight</span><span class="p">,</span> <span class="n">bias</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;QuantizedLinear&#39;</span>
 
     <span class="k">def</span> <span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;in_features=</span><span class="si">{}</span><span class="s1">, out_features=</span><span class="si">{}</span><span class="s1">, scale=</span><span class="si">{}</span><span class="s1">, zero_point=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -495,7 +492,6 @@
     <span class="k">def</span> <span class="nf">set_weight_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="c1"># type: (torch.Tensor, Optional[torch.Tensor]) -&gt; None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_packed_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">linear_prepack</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_scale</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">q_scale</span><span class="p">()</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
@@ -513,9 +509,6 @@
             <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_FLOAT_MODULE</span><span class="p">,</span> <span class="s1">&#39; nnq.&#39;</span> <span class="o">+</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;.from_float only works for &#39;</span> <span class="o">+</span> \
                 <span class="bp">cls</span><span class="o">.</span><span class="n">_FLOAT_MODULE</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s1">&#39;qconfig&#39;</span><span class="p">),</span> <span class="s1">&#39;Input float module must have qconfig defined&#39;</span>
-            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s1">&#39;observer&#39;</span><span class="p">),</span> <span class="s1">&#39;Input float module must have observer attached&#39;</span>
-            <span class="c1"># workaround for sequential, ConvReLU2d should probably</span>
-            <span class="c1"># inherit from Conv2d instead</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="o">==</span> <span class="n">nni</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">:</span>
                 <span class="n">activation_observer</span> <span class="o">=</span> <span class="n">mod</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">observer</span>
                 <span class="n">mod</span> <span class="o">=</span> <span class="n">mod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -525,8 +518,7 @@
             <span class="n">weight_observer</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
         <span class="n">act_scale</span><span class="p">,</span> <span class="n">act_zp</span> <span class="o">=</span> <span class="n">activation_observer</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">weight_observer</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="s1">&#39;Weight observer must have dtype torch.qint8&#39;</span>
-        <span class="n">wt_scale</span><span class="p">,</span> <span class="n">wt_zp</span> <span class="o">=</span> <span class="n">weight_observer</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
-        <span class="n">qweight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantize_per_tensor</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="nb">float</span><span class="p">(</span><span class="n">wt_scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">wt_zp</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">)</span>
+        <span class="n">qweight</span> <span class="o">=</span> <span class="n">_quantize_weight</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">weight_observer</span><span class="p">)</span>
         <span class="n">qlinear</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">in_features</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">out_features</span><span class="p">)</span>
         <span class="n">qlinear</span><span class="o">.</span><span class="n">set_weight_bias</span><span class="p">(</span><span class="n">qweight</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
         <span class="n">qlinear</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">act_scale</span><span class="p">)</span>

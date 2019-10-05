@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../storage.html">torch.Storage</a></li>
@@ -296,52 +291,30 @@
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic</span> <span class="k">as</span> <span class="nn">nni</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic.quantized</span> <span class="k">as</span> <span class="nn">nniq</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic.qat</span> <span class="k">as</span> <span class="nn">nniqat</span>
-<span class="kn">import</span> <span class="nn">torch.nn.quantized</span> <span class="k">as</span> <span class="nn">nnq</span>
-<span class="kn">import</span> <span class="nn">torch.nn.quantized.dynamic</span> <span class="k">as</span> <span class="nn">nnqd</span>
-<span class="kn">from</span> <span class="nn">.QConfig</span> <span class="k">import</span> <span class="n">default_dynamic_qconfig</span><span class="p">,</span> <span class="n">float16_dynamic_qconfig</span>
-<span class="kn">import</span> <span class="nn">torch.nn.qat</span> <span class="k">as</span> <span class="nn">nnqat</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
-<div class="viewcode-block" id="QuantStub"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.QuantStub">[docs]</a><span class="k">class</span> <span class="nc">QuantStub</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Quantize stub module, before calibration, this is same as an observer,</span>
-<span class="sd">    it will be swapped as `nnq.Quantize` in `convert`.</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic</span> <span class="k">as</span> <span class="nn">nni</span>
+<span class="kn">import</span> <span class="nn">torch.nn.quantized</span> <span class="k">as</span> <span class="nn">nnq</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        qconfig: quantization configuration for the tensor,</span>
-<span class="sd">            if qconfig is not provided, we will get qconfig from parent modules</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qconfig</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">QuantStub</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">qconfig</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="n">qconfig</span>
+<span class="kn">from</span> <span class="nn">.default_mappings</span> <span class="k">import</span> <span class="p">(</span><span class="n">DEFAULT_DYNAMIC_MODULE_MAPPING</span><span class="p">,</span>
+                               <span class="n">DEFAULT_MODULE_MAPPING</span><span class="p">,</span>
+                               <span class="n">DEFAULT_QAT_MODULE_MAPPING</span><span class="p">,</span>
+                               <span class="n">DEFAULT_QCONFIG_PROPAGATE_WHITE_LIST</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.stubs</span> <span class="k">import</span> <span class="n">DeQuantStub</span><span class="p">,</span> <span class="n">QuantWrapper</span>
+<span class="kn">from</span> <span class="nn">.QConfig</span> <span class="k">import</span> <span class="n">default_dynamic_qconfig</span><span class="p">,</span> <span class="n">float16_dynamic_qconfig</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">x</span></div>
-
-<div class="viewcode-block" id="DeQuantStub"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.DeQuantStub">[docs]</a><span class="k">class</span> <span class="nc">DeQuantStub</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dequantize stub module, before calibration, this is same as identity,</span>
-<span class="sd">    this will be swapped as `nnq.DeQuantize` in `convert`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">DeQuantStub</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">x</span></div>
-
-<span class="n">DEFAULT_SKIP_LIST</span> <span class="o">=</span> <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">AvgPool2d</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">,</span> <span class="n">DeQuantStub</span><span class="p">]</span>
-
-<span class="k">def</span> <span class="nf">_propagate_qconfig_helper</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="p">,</span> <span class="n">skip_list</span><span class="o">=</span><span class="n">DEFAULT_SKIP_LIST</span><span class="p">,</span> <span class="n">qconfig_parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_propagate_qconfig_helper</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="p">,</span> <span class="n">white_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">qconfig_parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;This is a helper function for `propagate_qconfig_`</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        module: input module</span>
 <span class="sd">        qconfig_dict: dictionary that maps from name of submodule to quantization</span>
 <span class="sd">                     configuration</span>
+<span class="sd">        white_list: list of quantizable modules</span>
 <span class="sd">        qconfig_parent: quantization config of parent module, we will fallback to</span>
 <span class="sd">                       this config when there is no specified config for current</span>
 <span class="sd">                       module</span>
@@ -351,39 +324,32 @@
 <span class="sd">    Return:</span>
 <span class="sd">        None, module is modified inplace with qconfig attached</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="ow">in</span> <span class="n">skip_list</span><span class="p">:</span>
-        <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s1">&#39;qconfig&#39;</span><span class="p">):</span>
-        <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="n">qconfig_parent</span>
-        <span class="k">if</span> <span class="n">qconfig_dict</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">qconfig_dict</span><span class="p">:</span>
-                <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="n">qconfig_dict</span><span class="p">[</span><span class="n">prefix</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="ow">in</span> <span class="n">qconfig_dict</span><span class="p">:</span>
-                <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="n">qconfig_dict</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)]</span>
-
-    <span class="c1"># Don&#39;t quantize empty Sequential, empty Sequential is same as</span>
-    <span class="c1"># Identity, but we can&#39;t put Sequential into skip list because</span>
-    <span class="c1"># we also have non-empty Sequential and the qconfig needs to</span>
-    <span class="c1"># be propagated to child in that case</span>
     <span class="c1"># TODO: Add test</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">_modules</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="o">==</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
-        <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">white_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">white_list</span> <span class="o">=</span> <span class="n">DEFAULT_QCONFIG_PROPAGATE_WHITE_LIST</span>
 
+    <span class="n">module_qconfig</span> <span class="o">=</span> <span class="n">qconfig_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">),</span> <span class="n">qconfig_parent</span><span class="p">)</span>
+    <span class="n">module_qconfig</span> <span class="o">=</span> <span class="n">qconfig_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">module_qconfig</span><span class="p">)</span>
+    <span class="n">module_qconfig</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s1">&#39;qconfig&#39;</span><span class="p">,</span> <span class="n">module_qconfig</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="ow">in</span> <span class="n">white_list</span><span class="p">:</span>
+        <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="o">=</span> <span class="n">module_qconfig</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_children</span><span class="p">():</span>
         <span class="n">module_prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">name</span>
-        <span class="n">_propagate_qconfig_helper</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="p">,</span> <span class="n">skip_list</span><span class="p">,</span> <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span><span class="p">,</span> <span class="n">module_prefix</span><span class="p">)</span>
+        <span class="n">_propagate_qconfig_helper</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="p">,</span> <span class="n">white_list</span><span class="p">,</span>
+                                  <span class="n">module_qconfig</span><span class="p">,</span> <span class="n">module_prefix</span><span class="p">)</span>
 
-<span class="c1"># TODO(jerryzh): expose skip_list</span>
+<span class="c1"># TODO(jerryzh): expose white_list</span>
 <span class="k">def</span> <span class="nf">propagate_qconfig_</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Propagate qconfig through the module hierarchy and assign `qconfig`</span>
 <span class="sd">    attribute on each leaf module</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        module: input module</span>
-<span class="sd">        qconfig_dict: dictionary that maps from name or type of submodule to quantization</span>
-<span class="sd">            configuration, qconfig applies to all submodules of a given</span>
-<span class="sd">            module unless qconfig for the submodules are specified (when the</span>
-<span class="sd">            submodule already has qconfig attribute)</span>
+<span class="sd">        qconfig_dict: dictionary that maps from name or type of submodule to</span>
+<span class="sd">            quantization configuration, qconfig applies to all submodules of a</span>
+<span class="sd">            given module unless qconfig for the submodules are specified (when</span>
+<span class="sd">            the submodule already has qconfig attribute)</span>
 
 <span class="sd">    Return:</span>
 <span class="sd">        None, module is modified inplace with qconfig attached</span>
@@ -423,30 +389,6 @@
         <span class="c1"># observer and hook will be gone after we swap the module</span>
         <span class="n">module</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;observer&#39;</span><span class="p">,</span> <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span><span class="o">.</span><span class="n">activation</span><span class="p">())</span>
         <span class="n">module</span><span class="o">.</span><span class="n">register_forward_hook</span><span class="p">(</span><span class="n">_observer_forward_hook</span><span class="p">)</span>
-
-<div class="viewcode-block" id="QuantWrapper"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.QuantWrapper">[docs]</a><span class="k">class</span> <span class="nc">QuantWrapper</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;A wrapper class that wraps the input module, adds QuantStub and</span>
-<span class="sd">    DeQuantStub and surround the call to module with call to quant and dequant</span>
-<span class="sd">    modules.</span>
-
-<span class="sd">    This is used by the `quantization` utility functions to add the quant and</span>
-<span class="sd">    dequant modules, before `convert` function `QuantStub` will just be observer,</span>
-<span class="sd">    it observes the input tensor, after `convert`, `QuantStub`</span>
-<span class="sd">    will be swapped to `nnq.Quantize` which does actual quantization. Similarly</span>
-<span class="sd">    for `DeQuantStub`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">QuantWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="n">qconfig</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">qconfig</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s1">&#39;qconfig&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;quant&#39;</span><span class="p">,</span> <span class="n">QuantStub</span><span class="p">(</span><span class="n">qconfig</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;dequant&#39;</span><span class="p">,</span> <span class="n">DeQuantStub</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dequant</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="add_quant_dequant"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.add_quant_dequant">[docs]</a><span class="k">def</span> <span class="nf">add_quant_dequant</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrap the leaf child module in QuantWrapper if it has a valid qconfig</span>
@@ -498,44 +440,7 @@
     <span class="n">add_observer_</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>
 
-<span class="c1"># Map for swapping float module to quantized ones</span>
-<span class="n">DEFAULT_MODULE_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">ReLU</span><span class="p">,</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span>
-    <span class="n">QuantStub</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">Quantize</span><span class="p">,</span>
-    <span class="n">DeQuantStub</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">DeQuantize</span><span class="p">,</span>
-    <span class="c1"># Wrapper Modules:</span>
-    <span class="n">nnq</span><span class="o">.</span><span class="n">FloatFunctional</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">QFunctional</span><span class="p">,</span>
-    <span class="c1"># Intrinsic modules:</span>
-    <span class="n">nni</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">:</span> <span class="n">nniq</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">,</span>
-    <span class="n">nni</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">:</span> <span class="n">nniq</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">,</span>
-    <span class="n">nniqat</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">:</span> <span class="n">nniq</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">,</span>
-    <span class="n">nniqat</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">:</span> <span class="n">nniq</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">,</span>
-    <span class="n">nniqat</span><span class="o">.</span><span class="n">ConvBn2d</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span>
-    <span class="n">nniqat</span><span class="o">.</span><span class="n">ConvBnReLU2d</span><span class="p">:</span> <span class="n">nniq</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">,</span>
-    <span class="c1"># QAT modules:</span>
-    <span class="n">nnqat</span><span class="o">.</span><span class="n">Linear</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
-    <span class="n">nnqat</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">:</span> <span class="n">nnq</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span>
-<span class="p">}</span>
-
-<span class="c1"># Map for swapping float module to qat modules</span>
-<span class="n">DEFAULT_QAT_MODULE_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">:</span> <span class="n">nnqat</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">:</span> <span class="n">nnqat</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span>
-    <span class="c1"># Intrinsic modules:</span>
-    <span class="n">nni</span><span class="o">.</span><span class="n">ConvBn2d</span><span class="p">:</span> <span class="n">nniqat</span><span class="o">.</span><span class="n">ConvBn2d</span><span class="p">,</span>
-    <span class="n">nni</span><span class="o">.</span><span class="n">ConvBnReLU2d</span><span class="p">:</span> <span class="n">nniqat</span><span class="o">.</span><span class="n">ConvBnReLU2d</span><span class="p">,</span>
-    <span class="n">nni</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">:</span> <span class="n">nniqat</span><span class="o">.</span><span class="n">ConvReLU2d</span><span class="p">,</span>
-    <span class="n">nni</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">:</span> <span class="n">nniqat</span><span class="o">.</span><span class="n">LinearReLU</span>
-<span class="p">}</span>
-
-<span class="n">DEFAULT_DYNAMIC_MODULE_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">:</span> <span class="n">nnqd</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span><span class="p">:</span> <span class="n">nnqd</span><span class="o">.</span><span class="n">LSTM</span><span class="p">,</span>
-<span class="p">}</span>
-
-<div class="viewcode-block" id="quantize"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.quantize">[docs]</a><span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">run_fn</span><span class="p">,</span> <span class="n">run_args</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="n">DEFAULT_MODULE_MAPPING</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="quantize"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.quantize">[docs]</a><span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">run_fn</span><span class="p">,</span> <span class="n">run_args</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts a float model to quantized model.</span>
 
 <span class="sd">    First it will prepare the model for calibration or training, then it calls</span>
@@ -554,7 +459,8 @@
 <span class="sd">    Return:</span>
 <span class="sd">        Quantized model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
+    <span class="k">if</span> <span class="n">mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">DEFAULT_MODULE_MAPPING</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -563,7 +469,8 @@
     <span class="n">convert</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>
 
-<div class="viewcode-block" id="quantize_dynamic"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.quantize_dynamic">[docs]</a><span class="k">def</span> <span class="nf">quantize_dynamic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="n">DEFAULT_DYNAMIC_MODULE_MAPPING</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="quantize_dynamic"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.quantize_dynamic">[docs]</a><span class="k">def</span> <span class="nf">quantize_dynamic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qconfig_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span>
+                     <span class="n">mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts a float model to dynamic (i.e. weights-only) quantized model.</span>
 
 <span class="sd">    Replaces specified modules with dynamic weight-only quantized versions and output the quantized model.</span>
@@ -571,28 +478,31 @@
 <span class="sd">    For simplest usage provide `dtype` argument that can be float16 or qint8. Weight-only quantization</span>
 <span class="sd">    by default is performed for layers with large weights size - i.e. Linear and RNN variants.</span>
 
-<span class="sd">    Fine grained control is possible with `qconfig_dict` and `mapping` that act similarly to `quantize()`.</span>
-<span class="sd">    If `qconfig_dict` is provided, the `dtype` argument is ignored.</span>
+<span class="sd">    Fine grained control is possible with `qconfig` and `mapping` that act similarly to `quantize()`.</span>
+<span class="sd">    If `qconfig` is provided, the `dtype` argument is ignored.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        module: input model</span>
-<span class="sd">        qconfig_dict: dictionary that maps from name or type of submodule to quantization</span>
-<span class="sd">            configuration, qconfig applies to all submodules of a given</span>
-<span class="sd">            module unless qconfig for the submodules are specified (when the</span>
-<span class="sd">            submodule already has qconfig attribute). Entries in the dictionary</span>
-<span class="sd">            need to be QConfigDynamic instances.</span>
+<span class="sd">        qconfig_spec: Either:</span>
+<span class="sd">            * A dictionary that maps from name or type of submodule to quantization</span>
+<span class="sd">              configuration, qconfig applies to all submodules of a given</span>
+<span class="sd">              module unless qconfig for the submodules are specified (when the</span>
+<span class="sd">              submodule already has qconfig attribute). Entries in the dictionary</span>
+<span class="sd">              need to be QConfigDynamic instances.</span>
+<span class="sd">            * A set of types and/or submodule names to apply dynamic quantization to,</span>
+<span class="sd">              in which case the `dtype` argument is used to specifiy the bit-width</span>
 <span class="sd">        inplace: carry out model transformations in-place, the original module is mutated</span>
 <span class="sd">        mapping: maps type of a submodule to a type of corresponding dynamically quantized version</span>
 <span class="sd">            with which the submodule needs to be replaced</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">qconfig_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">qconfig_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">:</span>
-            <span class="n">qconfig_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">qconfig_spec</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span> <span class="p">:</span> <span class="n">default_dynamic_qconfig</span><span class="p">,</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span> <span class="p">:</span> <span class="n">default_dynamic_qconfig</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="k">elif</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">:</span>
-            <span class="n">qconfig_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">qconfig_spec</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="c1"># TODO: uncomment when float16 Linear support is added</span>
                 <span class="c1"># nn.Linear : default_dynamic_qconfig,</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span> <span class="p">:</span> <span class="n">float16_dynamic_qconfig</span><span class="p">,</span>
@@ -600,11 +510,22 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Don&#39;t know how to quantize with default settings for </span><span class="si">{}</span><span class="s2">. Provide full qconfig please&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qconfig_spec</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">:</span>
+            <span class="n">default_qconfig</span> <span class="o">=</span> <span class="n">default_dynamic_qconfig</span>
+        <span class="k">elif</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">:</span>
+            <span class="n">default_qconfig</span> <span class="o">=</span> <span class="n">float16_dynamic_qconfig</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown dtype specified for quantize_dynamic: &#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>
+        <span class="n">qconfig_spec</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">qconfig_spec</span><span class="p">,</span> <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">default_qconfig</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">DEFAULT_DYNAMIC_MODULE_MAPPING</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-    <span class="n">propagate_qconfig_</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qconfig_dict</span><span class="p">)</span>
+    <span class="n">propagate_qconfig_</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qconfig_spec</span><span class="p">)</span>
     <span class="n">convert</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>
 
@@ -633,16 +554,17 @@
     <span class="n">convert</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>
 
-<div class="viewcode-block" id="convert"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.convert">[docs]</a><span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="n">DEFAULT_MODULE_MAPPING</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="convert"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.convert">[docs]</a><span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Converts the float module with observers (where we can get quantization</span>
 <span class="sd">    parameters) to a quantized module.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        module: calibrated module with observers</span>
-<span class="sd">        mapping: a dictionary that maps from float module type to quantized module type, can be overwrritten </span>
-<span class="sd">                 to allow swapping user defined Modules</span>
+<span class="sd">        mapping: a dictionary that maps from float module type to quantized module type, can be overwrritten to allow swapping user defined Modules</span>
 <span class="sd">        inplace: carry out model transformations in-place, the original module is mutated</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">DEFAULT_MODULE_MAPPING</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="n">module</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
     <span class="n">reassign</span> <span class="o">=</span> <span class="p">{}</span>

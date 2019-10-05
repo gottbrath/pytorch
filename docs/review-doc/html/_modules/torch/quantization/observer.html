@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../storage.html">torch.Storage</a></li>
@@ -402,8 +397,9 @@
                 <span class="n">min_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="p">),</span> <span class="s2">&quot;min </span><span class="si">{}</span><span class="s2"> should be less than max </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">min_vals</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">max_vals</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-        <span class="n">scales</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">min_vals</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
-        <span class="n">zero_points</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">min_vals</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">min_vals</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">zero_points</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">min_vals</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">scales</span><span class="p">)):</span>
             <span class="n">qparam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_qparams</span><span class="p">(</span>
                 <span class="n">min_vals</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">max_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -637,6 +633,8 @@
 
         <span class="n">norm</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">dst_bin_width</span> <span class="o">=</span> <span class="n">bin_width</span> <span class="o">*</span> <span class="p">(</span><span class="n">next_end_bin</span> <span class="o">-</span> <span class="n">next_start_bin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">dst_nbins</span>
+        <span class="k">if</span> <span class="n">dst_bin_width</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
         <span class="k">for</span> <span class="n">src_bin</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">):</span>
             <span class="c1"># distances from the beginning of first dst_bin to the beginning and</span>
             <span class="c1"># end of src_bin</span>
@@ -827,7 +825,7 @@
         <span class="k">return</span> <span class="n">x</span>
 
     <span class="k">def</span> <span class="nf">calculate_qparams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="s2">&quot;must run observer before calling calculate_qparams.</span><span class="se">\</span>
 <span class="s2">                                    Returning default scale and zero point &quot;</span>
@@ -902,6 +900,7 @@
 <span class="n">default_debug_observer</span> <span class="o">=</span> <span class="n">RecordingObserver</span>
 <span class="n">default_weight_observer</span> <span class="o">=</span> <span class="n">MinMaxObserver</span><span class="o">.</span><span class="n">with_args</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="n">qscheme</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">per_tensor_symmetric</span><span class="p">)</span>
 <span class="n">default_histogram_observer</span> <span class="o">=</span> <span class="n">HistogramObserver</span><span class="o">.</span><span class="n">with_args</span><span class="p">(</span><span class="n">reduce_range</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">default_per_channel_weight_observer</span> <span class="o">=</span> <span class="n">PerChannelMinMaxObserver</span><span class="o">.</span><span class="n">with_args</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="n">qscheme</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">per_channel_symmetric</span><span class="p">)</span>
 </pre></div>
 
              </article>

@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../storage.html">torch.Storage</a></li>
@@ -804,6 +799,7 @@
     <span class="k">global</span> <span class="n">_pg_group_ranks</span>
     <span class="k">global</span> <span class="n">_default_pg</span>
     <span class="k">global</span> <span class="n">_default_pg_init_method</span>
+    <span class="k">global</span> <span class="n">_group_count</span>
 
     <span class="k">if</span> <span class="n">group</span> <span class="o">==</span> <span class="n">GroupMember</span><span class="o">.</span><span class="n">NON_GROUP_MEMBER</span><span class="p">:</span>
         <span class="k">return</span>
@@ -822,6 +818,16 @@
         <span class="n">_pg_map</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="n">_pg_names</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="n">_pg_group_ranks</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="c1"># when process group doesn&#39;t have an explicit name (only WORLD (default)</span>
+        <span class="c1"># process group can have an explicit name), we use global _group_counter</span>
+        <span class="c1"># to generate the name. We need to reset the counter on destruction to</span>
+        <span class="c1"># allow consistent value to be generated when we re-create process</span>
+        <span class="c1"># groups after some trainers recover from failure</span>
+        <span class="c1">#</span>
+        <span class="c1"># We only reset this when WORLD is being destroyed because if this</span>
+        <span class="c1"># process group is in good state, we aren&#39;t dealing with failures.</span>
+        <span class="n">_group_count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">del</span> <span class="n">_pg_map</span><span class="p">[</span><span class="n">pg</span><span class="p">]</span>
         <span class="k">del</span> <span class="n">_pg_names</span><span class="p">[</span><span class="n">pg</span><span class="p">]</span>

@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../storage.html">torch.Storage</a></li>
@@ -301,11 +296,12 @@
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic</span> <span class="k">as</span> <span class="nn">nni</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic.qat</span> <span class="k">as</span> <span class="nn">nniqat</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic</span> <span class="k">as</span> <span class="nn">nni</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic.qat</span> <span class="k">as</span> <span class="nn">nniqat</span>
 <span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="k">import</span> <span class="n">fuse_conv_bn_weights</span>
 <span class="kn">from</span> <span class="nn">torch._ops</span> <span class="k">import</span> <span class="n">ops</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules.utils</span> <span class="k">import</span> <span class="n">_pair</span>
+<span class="kn">from</span> <span class="nn">torch.nn.quantized.modules.utils</span> <span class="k">import</span> <span class="n">_quantize_weight</span>
 
 <div class="viewcode-block" id="Conv2d"><a class="viewcode-back" href="../../../../../quantization.html#torch.nn.quantized.modules.conv.Conv2d">[docs]</a><span class="k">class</span> <span class="nc">Conv2d</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies a 2D convolution over a quantized input signal composed of</span>
@@ -373,7 +369,6 @@
             <span class="p">[</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">in_channels</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
             <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">zero_point</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="n">bias_float</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">bias</span><span class="p">:</span>
             <span class="n">bias_float</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
@@ -381,6 +376,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_weight_bias</span><span class="p">(</span><span class="n">qweight</span><span class="p">,</span> <span class="n">bias_float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;QuantizedConv2d&#39;</span>
 
     <span class="k">def</span> <span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">{in_channels}</span><span class="s1">, </span><span class="si">{out_channels}</span><span class="s1">, kernel_size=</span><span class="si">{kernel_size}</span><span class="s1">&#39;</span>
@@ -399,7 +397,6 @@
         <span class="c1"># type: (torch.Tensor, Optional[torch.Tensor]) -&gt; None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_packed_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">conv_prepack</span><span class="p">(</span>
             <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_scale</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">q_scale</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_weight_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">conv_unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_packed_params</span><span class="p">)</span>
@@ -529,11 +526,7 @@
             <span class="n">weight_observer</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
         <span class="n">act_scale</span><span class="p">,</span> <span class="n">act_zp</span> <span class="o">=</span> <span class="n">activation_observer</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">weight_observer</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="s1">&#39;Weight observer must have a dtype of qint8&#39;</span>
-        <span class="n">wt_scale</span><span class="p">,</span> <span class="n">wt_zp</span> <span class="o">=</span> <span class="n">weight_observer</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
-
-        <span class="n">qweight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantize_per_tensor</span><span class="p">(</span>
-            <span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span>
-            <span class="nb">float</span><span class="p">(</span><span class="n">wt_scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">wt_zp</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">)</span>
+        <span class="n">qweight</span> <span class="o">=</span> <span class="n">_quantize_weight</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">weight_observer</span><span class="p">)</span>
         <span class="n">qconv</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span>
                     <span class="n">mod</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">dilation</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
                     <span class="n">mod</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">)</span>

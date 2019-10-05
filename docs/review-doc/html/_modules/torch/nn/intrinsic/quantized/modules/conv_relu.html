@@ -9,14 +9,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torch.nn._intrinsic.quantized.modules.conv_relu &mdash; PyTorch master documentation</title>
+  <title>torch.nn.intrinsic.quantized.modules.conv_relu &mdash; PyTorch master documentation</title>
   
 
   
   
   
   
-    <link rel="canonical" href="https://pytorch.org/docs/stable/_modules/torch/nn/_intrinsic/quantized/modules/conv_relu.html"/>
+    <link rel="canonical" href="https://pytorch.org/docs/stable/_modules/torch/nn/intrinsic/quantized/modules/conv_relu.html"/>
   
 
   
@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -152,7 +152,7 @@
 
           
 <div>
-  <a style="color:#F05732" href="https://pytorch.org/docs/stable/_modules/torch/nn/_intrinsic/quantized/modules/conv_relu.html">
+  <a style="color:#F05732" href="https://pytorch.org/docs/stable/_modules/torch/nn/intrinsic/quantized/modules/conv_relu.html">
     You are viewing unstable developer preview docs.
     Click here to view docs for latest stable release.
   </a>
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../../storage.html">torch.Storage</a></li>
@@ -262,7 +257,7 @@
         
           <li><a href="../../../../../torch.html">torch</a> &gt;</li>
         
-      <li>torch.nn._intrinsic.quantized.modules.conv_relu</li>
+      <li>torch.nn.intrinsic.quantized.modules.conv_relu</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -290,15 +285,15 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torch.nn._intrinsic.quantized.modules.conv_relu</h1><div class="highlight"><pre>
+  <h1>Source code for torch.nn.intrinsic.quantized.modules.conv_relu</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 <span class="kn">import</span> <span class="nn">torch.nn.quantized</span> <span class="k">as</span> <span class="nn">nnq</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic</span>
-<span class="kn">import</span> <span class="nn">torch.nn._intrinsic.qat</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic</span>
+<span class="kn">import</span> <span class="nn">torch.nn.intrinsic.qat</span>
 <span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="k">import</span> <span class="n">fuse_conv_bn_weights</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<div class="viewcode-block" id="ConvReLU2d"><a class="viewcode-back" href="../../../../../../quantization.html#torch.nn._intrinsic.quantized.modules.ConvReLU2d">[docs]</a><span class="k">class</span> <span class="nc">ConvReLU2d</span><span class="p">(</span><span class="n">nnq</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+<div class="viewcode-block" id="ConvReLU2d"><a class="viewcode-back" href="../../../../../../quantization.html#torch.nn.intrinsic.quantized.modules.ConvReLU2d">[docs]</a><span class="k">class</span> <span class="nc">ConvReLU2d</span><span class="p">(</span><span class="n">nnq</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A ConvReLU2d module is a fused module of Conv2d and ReLU</span>
 
@@ -308,7 +303,7 @@
 <span class="sd">        Same as torch.nn.quantized.Conv2d</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_FLOAT_MODULE</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">_intrinsic</span><span class="o">.</span><span class="n">ConvReLU2d</span>
+    <span class="n">_FLOAT_MODULE</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">ConvReLU2d</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -326,11 +321,14 @@
                                                <span class="bp">self</span><span class="o">.</span><span class="n">_packed_params</span><span class="p">,</span>
                                                <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
                                                <span class="bp">self</span><span class="o">.</span><span class="n">dilation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
-                                               <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">))</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;QuantizedConvReLU2d&#39;</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">_intrinsic</span><span class="o">.</span><span class="n">qat</span><span class="o">.</span><span class="n">ConvBnReLU2d</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">qat</span><span class="o">.</span><span class="n">ConvBnReLU2d</span><span class="p">:</span>
             <span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> \
                 <span class="n">fuse_conv_bn_weights</span><span class="p">(</span><span class="n">mod</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">running_mean</span><span class="p">,</span>
                                      <span class="n">mod</span><span class="o">.</span><span class="n">running_var</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="n">mod</span><span class="o">.</span><span class="n">beta</span><span class="p">)</span>

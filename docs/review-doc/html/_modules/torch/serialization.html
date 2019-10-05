@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../storage.html">torch.Storage</a></li>
@@ -301,6 +296,7 @@
 <span class="kn">import</span> <span class="nn">tarfile</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">copyreg</span>
 <span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">closing</span><span class="p">,</span> <span class="n">contextmanager</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="k">import</span> <span class="n">_import_dotted_name</span>
 <span class="kn">from</span> <span class="nn">._six</span> <span class="k">import</span> <span class="n">string_classes</span> <span class="k">as</span> <span class="n">_string_classes</span>
@@ -720,6 +716,23 @@
     <span class="k">finally</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">new_fd</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="c1"># Register pickling support for layout instances such as</span>
+<span class="c1"># torch.sparse_coo, etc</span>
+<span class="k">def</span> <span class="nf">_get_layout</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get layout extension object from its string representation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="n">_get_layout</span><span class="o">.</span><span class="n">cache</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cache</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">layout</span><span class="p">):</span>
+                <span class="n">cache</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+
+<span class="n">_get_layout</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">copyreg</span><span class="o">.</span><span class="n">pickle</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">layout</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="p">(</span><span class="n">_get_layout</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">),)))</span>
 
 
 <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">map_location</span><span class="p">,</span> <span class="n">pickle_module</span><span class="p">,</span> <span class="o">**</span><span class="n">pickle_load_args</span><span class="p">):</span>

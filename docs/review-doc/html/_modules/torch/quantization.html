@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../storage.html">torch.Storage</a></li>
@@ -297,6 +292,7 @@
 <span class="kn">from</span> <span class="nn">.QConfig</span> <span class="k">import</span> <span class="o">*</span>  <span class="c1"># noqa: F401</span>
 <span class="kn">from</span> <span class="nn">.fake_quantize</span> <span class="k">import</span> <span class="o">*</span>  <span class="c1"># noqa: F401</span>
 <span class="kn">from</span> <span class="nn">.fuse_modules</span> <span class="k">import</span> <span class="n">fuse_modules</span>  <span class="c1"># noqa: F401</span>
+<span class="kn">from</span> <span class="nn">.stubs</span> <span class="k">import</span> <span class="o">*</span>  <span class="c1"># noqa: F401</span>
 
 <div class="viewcode-block" id="default_eval_fn"><a class="viewcode-back" href="../../quantization.html#torch.quantization.default_eval_fn">[docs]</a><span class="k">def</span> <span class="nf">default_eval_fn</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">calib_data</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -307,10 +303,10 @@
         <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
 <span class="n">_all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;QuantWrapper&#39;</span><span class="p">,</span> <span class="s1">&#39;QuantStub&#39;</span><span class="p">,</span> <span class="s1">&#39;DeQuantStub&#39;</span><span class="p">,</span> <span class="s1">&#39;DEFAULT_MODULE_MAPPING&#39;</span><span class="p">,</span>
-    <span class="c1"># Top level API for quantizing a float model</span>
+    <span class="s1">&#39;QuantWrapper&#39;</span><span class="p">,</span> <span class="s1">&#39;QuantStub&#39;</span><span class="p">,</span> <span class="s1">&#39;DeQuantStub&#39;</span><span class="p">,</span>
+    <span class="c1"># Top level API for eager mode quantization</span>
     <span class="s1">&#39;quantize&#39;</span><span class="p">,</span>
-    <span class="c1"># Sub functions called by quantize</span>
+    <span class="c1"># Sub functions used by eager mode quantization</span>
     <span class="s1">&#39;prepare&#39;</span><span class="p">,</span> <span class="s1">&#39;convert&#39;</span><span class="p">,</span>
     <span class="c1"># Sub functions for `prepare` and `swap_module`</span>
     <span class="s1">&#39;propagate_qconfig_&#39;</span><span class="p">,</span> <span class="s1">&#39;add_quant_dequant&#39;</span><span class="p">,</span> <span class="s1">&#39;add_observer_&#39;</span><span class="p">,</span> <span class="s1">&#39;swap_module&#39;</span><span class="p">,</span>

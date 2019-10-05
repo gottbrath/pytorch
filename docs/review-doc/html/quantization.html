@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>PyTorch Quantization &mdash; PyTorch master documentation</title>
+  <title>torch.quantization &mdash; PyTorch master documentation</title>
   
 
   
@@ -130,7 +130,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -201,12 +201,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="optim.html">torch.optim</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="storage.html">torch.Storage</a></li>
@@ -260,7 +255,7 @@
       </li>
 
         
-      <li>PyTorch Quantization</li>
+      <li>torch.quantization</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -292,39 +287,36 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="pytorch-quantization">
-<h1>PyTorch Quantization<a class="headerlink" href="#pytorch-quantization" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="torch-quantization">
+<h1>torch.quantization<a class="headerlink" href="#torch-quantization" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="introduction-to-quantization">
 <h2>Introduction to Quantization<a class="headerlink" href="#introduction-to-quantization" title="Permalink to this headline">¶</a></h2>
 <p>A quantized model executes some or all of the operations on tensors with
 integer rather than floating point values. This allows for a more
 compact model representation and the use of high performance vectorized
 operations on many hardware platforms. PyTorch supports INT8
-quantization and the typical tensor uses FP32 so the memory needed to
-keep weights and activations is reduced by a factor of up to 4. Hardware
-implementations vary but can be anywhere from 2 to 4 times faster at the
-level of the vector instructions.</p>
-<div class="section" id="quantized-representation">
-<h3>Quantized representation<a class="headerlink" href="#quantized-representation" title="Permalink to this headline">¶</a></h3>
+quantization which compared to typical FP32 model allows to
+reduce weights and activations size by a factor of up to 4. Hardware
+implementations vary INT8 computations can be anywhere from 2 to 4 times faster
+at the level of the vector instructions compared to FP32 compute. Because of
+limited range of values, model training usually occurs in FP32 with the
+resulting model being converted down to lower precision. Thus only forward pass
+version of quantized operations are supported.</p>
+<p>At lower level, PyTorch provides a way to represent quantized tensors and
+perform operations with them. They can be used to directly construct models that
+perform all or part of the computation in lower precision. Higher-level APIs are
+provided that incorporate typical workflows of converting FP32 model to lower
+precision with minimal accuracy loss.</p>
+</div>
+<div class="section" id="quantized-representation-and-operations">
+<h2>Quantized representation and operations<a class="headerlink" href="#quantized-representation-and-operations" title="Permalink to this headline">¶</a></h2>
 <p>PyTorch supports both per tensor and per channel asymmetric linear
 quantization. Per tensor means that all the values within the tensor are
 scaled the same way. Per channel means that for each channel the values
 in the tensor are scaled and offset by a different value (effectively
-the scale and offset become vectors). Note that we currently only
-support per channel quantization for the <strong>conv</strong> and <strong>linear</strong>
-operators. Furthermore the minimum and the maximum of the input data is
-mapped linearly to the minimum and the maximum of the quantized data
-type such that zero is represented with no quantization error.</p>
+the scale and offset become vectors).</p>
 <p>The mapping is performed by converting the floating point tensors using</p>
 <p><strong>*include image of the formula from the design doc here*</strong></p>
-<p>Note that for operators, we restrict support to:</p>
-<ol class="arabic simple">
-<li><p>8 bit weights (data_type = qint8)</p></li>
-<li><p>8 bit activations (data_type = quint8)</p></li>
-<li><p>32 bit, symmetric quantization for bias (zero_point = 0, data_type
-= qint32)</p></li>
-</ol>
-</div>
 <div class="section" id="quantized-tensor">
 <h3>Quantized Tensor<a class="headerlink" href="#quantized-tensor" title="Permalink to this headline">¶</a></h3>
 <p>In order to do quantization in PyTorch, we need to be able to represent
@@ -334,10 +326,37 @@ parameters like scale and zero_point. Quantized tensors allow for many
 useful operations making quantized arithmetic easy, in addition to
 allowing for serialization of data in a quantized format.</p>
 </div>
+<div class="section" id="operation-coverage">
+<h3>Operation coverage<a class="headerlink" href="#operation-coverage" title="Permalink to this headline">¶</a></h3>
+<p>Quantized tensor supports a subset of data manipulation methods of the regular
+full-precision tensor.</p>
+<p>For NN operators included in PyTorch, we restrict support to:</p>
+<ol class="arabic simple">
+<li><p>8 bit weights (data_type = qint8)</p></li>
+<li><p>8 bit activations (data_type = quint8)</p></li>
+<li><p>32 bit, symmetric quantization for bias (zero_point = 0, data_type
+= qint32)</p></li>
+</ol>
+<p>Note that operator implementations currently only
+support per channel quantization for weights of the <strong>conv</strong> and <strong>linear</strong>
+operators. Furthermore the minimum and the maximum of the input data is
+mapped linearly to the minimum and the maximum of the quantized data
+type such that zero is represented with no quantization error.</p>
+<p>Additional data types and quantization schemes can be implemented through
+the custom operator mechanism.</p>
+<p>Many operations for quantized tensors are available under the same API as full
+float version in <code class="docutils literal notranslate"><span class="pre">torch</span></code> or <code class="docutils literal notranslate"><span class="pre">torch.nn</span></code>. Quantized version of NN modules that
+perform re-quantization are available in <code class="docutils literal notranslate"><span class="pre">torch.nn.quantized</span></code>. Those
+operations explicitly take output quantization parameters (scale and bias) in
+the operation signature.</p>
+<p>Current quantized operation list is sufficient to cover typical CNN and RNN
+models:</p>
+<p>TODO: explicit list here</p>
 </div>
-<div class="section" id="supported-quantization-techniques">
-<h2>Supported Quantization Techniques<a class="headerlink" href="#supported-quantization-techniques" title="Permalink to this headline">¶</a></h2>
-<p>PyTorch supports three approaches to quantize models.</p>
+</div>
+<div class="section" id="quantization-workflows">
+<h2>Quantization Workflows<a class="headerlink" href="#quantization-workflows" title="Permalink to this headline">¶</a></h2>
+<p>PyTorch provides three approaches to quantize models.</p>
 <ol class="arabic simple">
 <li><p>Dynamic Quantization: This is the simplest to apply form of
 quantization where the weights are quantized ahead of time but the
@@ -362,7 +381,7 @@ conv + relu.</p></li>
 <li><p>Specify the configuration of the quantization methods — such as
 selecting symmetric or asymmetric quantization and MinMax or
 L2Norm calibration techniques.</p></li>
-<li><p>Use the torch.quantization.prepare() method to insert functions
+<li><p>Use the torch.quantization.prepare() method to insert modules
 that will observe activation tensors during calibration</p></li>
 <li><p>Calibrate the model by running inference against a calibration
 dataset</p></li>
@@ -387,7 +406,7 @@ conv + relu.</p></li>
 <li><p>Specify the configuration of the quantization methods — such as
 selecting symmetric or asymmetric quantization and MinMax or
 L2Norm calibration techniques.</p></li>
-<li><p>Use the torch.quantization.FakeQuant() method to insert functions
+<li><p>Use the torch.quantization.FakeQuant() module to insert functions
 that will simulate quantization during training.</p></li>
 <li><p>Train or fine tune the model.</p></li>
 <li><p>Finally, convert the model itself with the
@@ -399,18 +418,30 @@ operators quantized implementations.</p></li>
 </ol>
 </li>
 </ol>
-<p>While functions to select the scale factor and bias based on observed
-tensor data are provided, developers can provide your own quantization
-functions. Quantization can be applied selectively to different parts of
-the model or configured differently for different portions of the model.</p>
+<p>While default implementations of observers to select the scale factor and bias
+based on observed tensor data are provided, developers can provide their own
+quantization functions. Quantization can be applied selectively to different
+parts of the model or configured differently for different parts of the model.</p>
 <p>We also provide support for per channel quantization for <strong>conv2d</strong>()
 and <strong>linear</strong>()</p>
+<p>Quantization workflows work by adding (e.g. adding observers as
+<code class="docutils literal notranslate"><span class="pre">.observer</span></code> submodule) or replacing (e.g. converting <code class="docutils literal notranslate"><span class="pre">nn.Conv2d</span></code> to
+<code class="docutils literal notranslate"><span class="pre">nn.quantized.Conv2d</span></code>) submodules in the model’s module hierarchy. It
+means that the model stays a regular <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>-based instance throughout the
+process and thus can work with the rest of PyTorch APIs.</p>
+<div class="section" id="model-preparation-for-quantization">
+<h3>Model preparation for quantization<a class="headerlink" href="#model-preparation-for-quantization" title="Permalink to this headline">¶</a></h3>
+<p>TODO:
+- fusion
+- replacement of modules with FloatFunctional
+- QuantStub</p>
+</div>
 </div>
 <div class="section" id="code-structure">
 <h2>Code Structure<a class="headerlink" href="#code-structure" title="Permalink to this headline">¶</a></h2>
-<p>The code is organized into the following sections</p>
+<p>The code is organized into the following modules</p>
 <ul class="simple">
-<li><p>torch.quantization : this module implements the functions you call
+<li><p><code class="docutils literal notranslate"><span class="pre">torch.quantization</span></code> : this module implements the functions you call
 directly to convert your model from FP32 to quantized form. For
 example the <strong>prepare() **method is used in post training
 quantization to prepares your model for the calibration step and the
@@ -418,33 +449,23 @@ quantization to prepares your model for the calibration step and the
 replaces the operations with their quantized counterparts. There are
 other helper functions for things like quantizing the input to your
 model and performing critical fusions like conv+relu.</p></li>
-<li><p>torch.nn.quantized: This module implements the quantized
+<li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.quantized</span></code>: This module implements the quantized
 implementations of the nn functions such as <strong>conv2d()</strong> and
 <strong>ReLU()</strong>. It also contains the functions to convert tensors to and
 from quantized form.</p></li>
-<li><p>torch.nn.qat.modules: This module implements versions of the key nn
-functions <strong>conv2d</strong>() and <strong>linear</strong>() which will run in FP32
+<li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.qat.modules</span></code>: This module implements versions of the key nn
+modules <strong>Conv2d</strong>() and <strong>Linear</strong>() which will run in FP32
 but with rounding applied to simulate the effect of INT8
 quantization.</p></li>
-<li><p>torch.nn.intrinsic.quantized.modules: This module implements the
+<li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.intrinsic.modules</span></code>: This module implements the combined (fused)
+modules conv + relu which are often required to preserve good accuracy
+during quantization.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.intrinsic.quantized.modules</span></code>: This module implements the
 quantized implementations of fused operations like conv + relu.</p></li>
-<li><p>torch.nn.intrinsic.qat.modules: This module implements the versions
+<li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.intrinsic.qat.modules</span></code>: This module implements the versions
 of those fused operations needed for quantization aware training.</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="module-torch.quantization">
-<span id="torch-quantization"></span><h1>torch.quantization<a class="headerlink" href="#module-torch.quantization" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="initialization">
-<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="torch.quantization.default_eval_fn">
-<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">default_eval_fn</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">calib_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization.html#default_eval_fn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.default_eval_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Default evaluation function takes a torch.utils.data.Dataset or a list of
-input Tensors and run the model on the dataset</p>
-</dd></dl>
-
-</div>
+<span class="target" id="module-torch.quantization"></span></div>
 <div class="section" id="fake-quantize">
 <h2>Fake Quantize<a class="headerlink" href="#fake-quantize" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -461,12 +482,7 @@ The output of this module is given by</p>
 <li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">fake_quant_enable</span></code> controls the application of fake quantization on tensors, note that
 statistics can still be updated.</p></li>
 <li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">observer_enable</span></code> controls statistics collection on tensors</p></li>
-<li><dl class="simple">
-<dt><code class="xref py py-attr docutils literal notranslate"><span class="pre">dtype</span></code> specifies the quantized dtype that is being emulated with fake-quantization,</dt><dd><p>allowable values are torch.qint8 and torch.quint8. The values of quant_min and
-quant_max should be chosen to be consistent with the dtype</p>
-</dd>
-</dl>
-</li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">dtype</span></code> specifies the quantized dtype that is being emulated with fake-quantization, allowable values are torch.qint8 and torch.quint8. The values of quant_min and quant_max should be chosen to be consistent with the dtype</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -489,11 +505,13 @@ provides a method to calculate scale and zero-point.</p>
 <h2>Fuse Modules<a class="headerlink" href="#fuse-modules" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="torch.quantization.fuse_modules">
-<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">fuse_modules</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">modules_to_fuse</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/fuse_modules.html#fuse_modules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.fuse_modules" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">fuse_modules</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">modules_to_fuse</em>, <em class="sig-param">inplace=False</em>, <em class="sig-param">fuser_func=&lt;function fuse_known_modules&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/fuse_modules.html#fuse_modules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.fuse_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fuses a list of modules into a single module</p>
 <p>Fuses only the following sequence of modules:
 conv, bn
 conv, bn, relu
+conv, relu
+linear, relu
 All other sequences are left unchanged.
 For these sequences, replaces the first item in the list
 with the fused module, replacing the rest of the modules
@@ -502,19 +520,32 @@ with identity.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> – Model containing the modules to be fused</p></li>
-<li><p><strong>modules_to_fuse</strong> – list of list of module names to fuse.</p></li>
+<li><p><strong>modules_to_fuse</strong> – list of list of module names to fuse. Can also be a list
+of strings if there is only a single list of modules to fuse.</p></li>
+<li><p><strong>inplace</strong> – bool specifying if fusion happens in place on the model, by default
+a new model is returned</p></li>
+<li><p><strong>fuser_func</strong> – Function that takes in a list of modules and outputs a list of fused modules
+of the same length. For example,
+fuser_func([convModule, BNModule]) returns the list [ConvBNModule, nn.Identity()]
+Defaults to torch.quantization.fuse_known_modules</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Modifies the model in place.</p>
+<dd class="field-even"><p>model with fused modules. A new copy is created if inplace=True.</p>
 </dd>
 </dl>
 <p>Examples:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">myModel</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># m is a module containing  the sub-modules below</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">modules_to_fuse</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span><span class="s1">&#39;conv1&#39;</span><span class="p">,</span> <span class="s1">&#39;bn1&#39;</span><span class="p">,</span> <span class="s1">&#39;relu1&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;submodule.conv&#39;</span><span class="p">,</span> <span class="s1">&#39;submodule.relu&#39;</span><span class="p">]]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">nn</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">fuse_module</span><span class="o">.</span><span class="n">fuse_module</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fused_m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">fuse_modules</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">fused_m</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">myModel</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Alternately provide a single list of modules to fuse</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modules_to_fuse</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;conv1&#39;</span><span class="p">,</span> <span class="s1">&#39;bn1&#39;</span><span class="p">,</span> <span class="s1">&#39;relu1&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fused_m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">fuse_modules</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">modules_to_fuse</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">fused_m</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -601,7 +632,7 @@ ranges.</p>
 <h2>Quant Stub<a class="headerlink" href="#quant-stub" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.quantization.QuantStub">
-<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">QuantStub</code><span class="sig-paren">(</span><em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#QuantStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.QuantStub" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">QuantStub</code><span class="sig-paren">(</span><em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/stubs.html#QuantStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.QuantStub" title="Permalink to this definition">¶</a></dt>
 <dd><p>Quantize stub module, before calibration, this is same as an observer,
 it will be swapped as <cite>nnq.Quantize</cite> in <cite>convert</cite>.</p>
 <dl class="field-list simple">
@@ -617,7 +648,7 @@ if qconfig is not provided, we will get qconfig from parent modules</p>
 <h2>DeQuant Stub<a class="headerlink" href="#dequant-stub" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.quantization.DeQuantStub">
-<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">DeQuantStub</code><a class="reference internal" href="_modules/torch/quantization/quantize.html#DeQuantStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.DeQuantStub" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">DeQuantStub</code><a class="reference internal" href="_modules/torch/quantization/stubs.html#DeQuantStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.DeQuantStub" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dequantize stub module, before calibration, this is same as identity,
 this will be swapped as <cite>nnq.DeQuantize</cite> in <cite>convert</cite>.</p>
 </dd></dl>
@@ -627,7 +658,7 @@ this will be swapped as <cite>nnq.DeQuantize</cite> in <cite>convert</cite>.</p>
 <h2>Quant Wrapper<a class="headerlink" href="#quant-wrapper" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.quantization.QuantWrapper">
-<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">QuantWrapper</code><span class="sig-paren">(</span><em class="sig-param">module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#QuantWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.QuantWrapper" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">QuantWrapper</code><span class="sig-paren">(</span><em class="sig-param">module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/stubs.html#QuantWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.QuantWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>A wrapper class that wraps the input module, adds QuantStub and
 DeQuantStub and surround the call to module with call to quant and dequant
 modules.</p>
@@ -685,7 +716,7 @@ submodule already has qconfig attribute)</p></li>
 
 <dl class="function">
 <dt id="torch.quantization.quantize">
-<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">quantize</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">run_fn</em>, <em class="sig-param">run_args</em>, <em class="sig-param">mapping={&lt;class 'torch.nn.modules.linear.Linear'&gt;: &lt;class 'torch.nn.quantized.modules.linear.Linear'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.modules.activation.ReLU'&gt;: &lt;class 'torch.nn.quantized.modules.activation.ReLU'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.modules.conv.Conv2d'&gt;: &lt;class 'torch.nn.quantized.modules.conv.Conv2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.quantization.quantize.QuantStub'&gt;: &lt;class 'torch.nn.quantized.modules.linear.Quantize'&gt;</em>, <em class="sig-param">&lt;class 'torch.quantization.quantize.DeQuantStub'&gt;: &lt;class 'torch.nn.quantized.modules.linear.DeQuantize'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.quantized.modules.functional_modules.FloatFunctional'&gt;: &lt;class 'torch.nn.quantized.modules.functional_modules.QFunctional'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.modules.fused.ConvReLU2d'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.conv_relu.ConvReLU2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.modules.fused.LinearReLU'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.linear_relu.LinearReLU'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.conv_fused.ConvReLU2d'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.conv_relu.ConvReLU2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.linear_relu.LinearReLU'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.linear_relu.LinearReLU'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.conv_fused.ConvBn2d'&gt;: &lt;class 'torch.nn.quantized.modules.conv.Conv2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.conv_fused.ConvBnReLU2d'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.conv_relu.ConvReLU2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.qat.modules.linear.Linear'&gt;: &lt;class 'torch.nn.quantized.modules.linear.Linear'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.qat.modules.conv.Conv2d'&gt;: &lt;class 'torch.nn.quantized.modules.conv.Conv2d'&gt;}</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#quantize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.quantize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">quantize</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">run_fn</em>, <em class="sig-param">run_args</em>, <em class="sig-param">mapping=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#quantize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.quantize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts a float model to quantized model.</p>
 <p>First it will prepare the model for calibration or training, then it calls
 <cite>run_fn</cite> which will run the calibration step or training step,
@@ -710,22 +741,30 @@ function that simply runs the prepared model or a training loop</p></li>
 
 <dl class="function">
 <dt id="torch.quantization.quantize_dynamic">
-<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">quantize_dynamic</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">qconfig_dict=None</em>, <em class="sig-param">dtype=torch.qint8</em>, <em class="sig-param">mapping={&lt;class 'torch.nn.modules.linear.Linear'&gt;: &lt;class 'torch.nn.quantized.dynamic.modules.linear.Linear'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.modules.rnn.LSTM'&gt;: &lt;class 'torch.nn.quantized.dynamic.modules.rnn.LSTM'&gt;}</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#quantize_dynamic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.quantize_dynamic" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">quantize_dynamic</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">qconfig_spec=None</em>, <em class="sig-param">dtype=torch.qint8</em>, <em class="sig-param">mapping=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#quantize_dynamic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.quantize_dynamic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts a float model to dynamic (i.e. weights-only) quantized model.</p>
 <p>Replaces specified modules with dynamic weight-only quantized versions and output the quantized model.</p>
 <p>For simplest usage provide <cite>dtype</cite> argument that can be float16 or qint8. Weight-only quantization
 by default is performed for layers with large weights size - i.e. Linear and RNN variants.</p>
-<p>Fine grained control is possible with <cite>qconfig_dict</cite> and <cite>mapping</cite> that act similarly to <cite>quantize()</cite>.
-If <cite>qconfig_dict</cite> is provided, the <cite>dtype</cite> argument is ignored.</p>
+<p>Fine grained control is possible with <cite>qconfig</cite> and <cite>mapping</cite> that act similarly to <cite>quantize()</cite>.
+If <cite>qconfig</cite> is provided, the <cite>dtype</cite> argument is ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>module</strong> – input model</p></li>
-<li><p><strong>qconfig_dict</strong> – dictionary that maps from name or type of submodule to quantization
-configuration, qconfig applies to all submodules of a given
+<li><p><strong>qconfig_spec</strong> – <p>Either:
+* A dictionary that maps from name or type of submodule to quantization</p>
+<blockquote>
+<div><p>configuration, qconfig applies to all submodules of a given
 module unless qconfig for the submodules are specified (when the
 submodule already has qconfig attribute). Entries in the dictionary
-need to be QConfigDynamic instances.</p></li>
+need to be QConfigDynamic instances.</p>
+</div></blockquote>
+<ul>
+<li><p>A set of types and/or submodule names to apply dynamic quantization to,
+in which case the <cite>dtype</cite> argument is used to specifiy the bit-width</p></li>
+</ul>
+</p></li>
 <li><p><strong>inplace</strong> – carry out model transformations in-place, the original module is mutated</p></li>
 <li><p><strong>mapping</strong> – maps type of a submodule to a type of corresponding dynamically quantized version
 with which the submodule needs to be replaced</p></li>
@@ -755,15 +794,14 @@ function that simply runs the prepared model or a training loop</p></li>
 
 <dl class="function">
 <dt id="torch.quantization.convert">
-<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">convert</code><span class="sig-paren">(</span><em class="sig-param">module</em>, <em class="sig-param">mapping={&lt;class 'torch.nn.modules.linear.Linear'&gt;: &lt;class 'torch.nn.quantized.modules.linear.Linear'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.modules.activation.ReLU'&gt;: &lt;class 'torch.nn.quantized.modules.activation.ReLU'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.modules.conv.Conv2d'&gt;: &lt;class 'torch.nn.quantized.modules.conv.Conv2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.quantization.quantize.QuantStub'&gt;: &lt;class 'torch.nn.quantized.modules.linear.Quantize'&gt;</em>, <em class="sig-param">&lt;class 'torch.quantization.quantize.DeQuantStub'&gt;: &lt;class 'torch.nn.quantized.modules.linear.DeQuantize'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.quantized.modules.functional_modules.FloatFunctional'&gt;: &lt;class 'torch.nn.quantized.modules.functional_modules.QFunctional'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.modules.fused.ConvReLU2d'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.conv_relu.ConvReLU2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.modules.fused.LinearReLU'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.linear_relu.LinearReLU'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.conv_fused.ConvReLU2d'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.conv_relu.ConvReLU2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.linear_relu.LinearReLU'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.linear_relu.LinearReLU'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.conv_fused.ConvBn2d'&gt;: &lt;class 'torch.nn.quantized.modules.conv.Conv2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn._intrinsic.qat.modules.conv_fused.ConvBnReLU2d'&gt;: &lt;class 'torch.nn._intrinsic.quantized.modules.conv_relu.ConvReLU2d'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.qat.modules.linear.Linear'&gt;: &lt;class 'torch.nn.quantized.modules.linear.Linear'&gt;</em>, <em class="sig-param">&lt;class 'torch.nn.qat.modules.conv.Conv2d'&gt;: &lt;class 'torch.nn.quantized.modules.conv.Conv2d'&gt;}</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.convert" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">convert</code><span class="sig-paren">(</span><em class="sig-param">module</em>, <em class="sig-param">mapping=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/quantize.html#convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts the float module with observers (where we can get quantization
 parameters) to a quantized module.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>module</strong> – calibrated module with observers</p></li>
-<li><p><strong>mapping</strong> – a dictionary that maps from float module type to quantized module type, can be overwrritten
-to allow swapping user defined Modules</p></li>
+<li><p><strong>mapping</strong> – a dictionary that maps from float module type to quantized module type, can be overwrritten to allow swapping user defined Modules</p></li>
 <li><p><strong>inplace</strong> – carry out model transformations in-place, the original module is mutated</p></li>
 </ul>
 </dd>
@@ -798,15 +836,22 @@ This is mainly used for quantization accuracy debug
 :param target_dict: the dictionary used to save all the observers</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="torch.quantization.default_eval_fn">
+<code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">default_eval_fn</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">calib_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization.html#default_eval_fn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.default_eval_fn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default evaluation function takes a torch.utils.data.Dataset or a list of
+input Tensors and run the model on the dataset</p>
+</dd></dl>
+
 </div>
+<div class="section" id="module-torch.nn.intrinsic.qat.modules">
+<span id="torch-nn-instrinsic-qat-modules"></span><h2>torch.nn.instrinsic.qat.modules<a class="headerlink" href="#module-torch.nn.intrinsic.qat.modules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-torch.nn._intrinsic.qat.modules">
-<span id="torch-nn-instrinsic-qat-modules"></span><h1>torch.nn._instrinsic.qat.modules<a class="headerlink" href="#module-torch.nn._intrinsic.qat.modules" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="convbn2d">
 <h2>ConvBn2d<a class="headerlink" href="#convbn2d" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="torch.nn._intrinsic.qat.modules.ConvBn2d">
-<em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.qat.modules.</code><code class="sig-name descname">ConvBn2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">eps=1e-05</em>, <em class="sig-param">momentum=0.1</em>, <em class="sig-param">freeze_bn=False</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/qat/modules/conv_fused.html#ConvBn2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.qat.modules.ConvBn2d" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.qat.modules.ConvBn2d">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.intrinsic.qat.modules.</code><code class="sig-name descname">ConvBn2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">eps=1e-05</em>, <em class="sig-param">momentum=0.1</em>, <em class="sig-param">freeze_bn=False</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/qat/modules/conv_fused.html#ConvBn2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.qat.modules.ConvBn2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>A ConvBn2d module is a module fused from Conv2d and BatchNorm2d,
 attached with FakeQuantize modules for both output activation and weight,
 used in quantization aware training.</p>
@@ -826,8 +871,8 @@ to align with post training flow</p></li>
 </dd>
 </dl>
 <dl class="method">
-<dt id="torch.nn._intrinsic.qat.modules.ConvBn2d.from_float">
-<em class="property">classmethod </em><code class="sig-name descname">from_float</code><span class="sig-paren">(</span><em class="sig-param">mod</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/qat/modules/conv_fused.html#ConvBn2d.from_float"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.qat.modules.ConvBn2d.from_float" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.qat.modules.ConvBn2d.from_float">
+<em class="property">classmethod </em><code class="sig-name descname">from_float</code><span class="sig-paren">(</span><em class="sig-param">mod</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/qat/modules/conv_fused.html#ConvBn2d.from_float"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.qat.modules.ConvBn2d.from_float" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a qat module from a float module or qparams_dict</p>
 <p>Args: <cite>mod</cite> a float module, either produced by torch.quantization utilities
 or directly from user</p>
@@ -839,8 +884,8 @@ or directly from user</p>
 <div class="section" id="convbnrelu2d">
 <h2>ConvBnReLU2d<a class="headerlink" href="#convbnrelu2d" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="torch.nn._intrinsic.qat.modules.ConvBnReLU2d">
-<em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.qat.modules.</code><code class="sig-name descname">ConvBnReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">eps=1e-05</em>, <em class="sig-param">momentum=0.1</em>, <em class="sig-param">freeze_bn=False</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/qat/modules/conv_fused.html#ConvBnReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.qat.modules.ConvBnReLU2d" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.qat.modules.ConvBnReLU2d">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.intrinsic.qat.modules.</code><code class="sig-name descname">ConvBnReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">eps=1e-05</em>, <em class="sig-param">momentum=0.1</em>, <em class="sig-param">freeze_bn=False</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/qat/modules/conv_fused.html#ConvBnReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.qat.modules.ConvBnReLU2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>A ConvBnReLU2d module is a module fused from Conv2d, BatchNorm2d and ReLU,
 attached with FakeQuantize modules for both output activation and weight,
 used in quantization aware training.</p>
@@ -864,8 +909,8 @@ to align with post training flow</p></li>
 <div class="section" id="convrelu2d">
 <h2>ConvReLU2d<a class="headerlink" href="#convrelu2d" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="torch.nn._intrinsic.qat.modules.ConvReLU2d">
-<em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.qat.modules.</code><code class="sig-name descname">ConvReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/qat/modules/conv_fused.html#ConvReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.qat.modules.ConvReLU2d" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.qat.modules.ConvReLU2d">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.intrinsic.qat.modules.</code><code class="sig-name descname">ConvReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/qat/modules/conv_fused.html#ConvReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.qat.modules.ConvReLU2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>A ConvReLU2d module is a fused module of Conv2d and ReLU, attached with
 FakeQuantize modules for both output activation and weight for
 quantization aware training.</p>
@@ -886,13 +931,13 @@ to align with post training flow</p></li>
 <div class="section" id="linearrelu">
 <h2>LinearReLU<a class="headerlink" href="#linearrelu" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="torch.nn._intrinsic.qat.modules.LinearReLU">
-<em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.qat.modules.</code><code class="sig-name descname">LinearReLU</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/qat/modules/linear_relu.html#LinearReLU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.qat.modules.LinearReLU" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.qat.modules.LinearReLU">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.intrinsic.qat.modules.</code><code class="sig-name descname">LinearReLU</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">qconfig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/qat/modules/linear_relu.html#LinearReLU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.qat.modules.LinearReLU" title="Permalink to this definition">¶</a></dt>
 <dd><p>A LinearReLU module fused from Linear and ReLU modules, attached with
 FakeQuantize modules for output activation and weight, used in
 quantization aware training.</p>
 <p>We adopt the same interface as <a class="reference internal" href="nn.html#torch.nn.Linear" title="torch.nn.Linear"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Linear</span></code></a>.</p>
-<p>Similar to <cite>torch.nn._intrinsic.LinearReLU</cite>, with FakeQuantize modules initialized to
+<p>Similar to <cite>torch.nn.intrinsic.LinearReLU</cite>, with FakeQuantize modules initialized to
 default.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Variables</dt>
@@ -914,14 +959,14 @@ to align with post training flow, TODO: rename?</p></li>
 </dd></dl>
 
 </div>
+<div class="section" id="module-torch.nn.intrinsic.quantized.modules">
+<span id="torch-nn-intrinsic-quantized-modules"></span><h2>torch.nn.intrinsic.quantized.modules<a class="headerlink" href="#module-torch.nn.intrinsic.quantized.modules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-torch.nn._intrinsic.quantized.modules">
-<span id="torch-nn-intrinsic-quantized-modules"></span><h1>torch.nn._intrinsic.quantized.modules<a class="headerlink" href="#module-torch.nn._intrinsic.quantized.modules" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id9">
 <h2>ConvReLU2d<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="torch.nn._intrinsic.quantized.modules.ConvReLU2d">
-<em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.quantized.modules.</code><code class="sig-name descname">ConvReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">padding_mode='zeros'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/quantized/modules/conv_relu.html#ConvReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.quantized.modules.ConvReLU2d" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.quantized.modules.ConvReLU2d">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.intrinsic.quantized.modules.</code><code class="sig-name descname">ConvReLU2d</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">out_channels</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">bias=True</em>, <em class="sig-param">padding_mode='zeros'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/quantized/modules/conv_relu.html#ConvReLU2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.quantized.modules.ConvReLU2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>A ConvReLU2d module is a fused module of Conv2d and ReLU</p>
 <p>We adopt the same interface as <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.quantized.Conv2d</span></code>.</p>
 <dl class="field-list simple">
@@ -935,8 +980,8 @@ to align with post training flow, TODO: rename?</p></li>
 <div class="section" id="id10">
 <h2>LinearReLU<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="torch.nn._intrinsic.quantized.modules.LinearReLU">
-<em class="property">class </em><code class="sig-prename descclassname">torch.nn._intrinsic.quantized.modules.</code><code class="sig-name descname">LinearReLU</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/_intrinsic/quantized/modules/linear_relu.html#LinearReLU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn._intrinsic.quantized.modules.LinearReLU" title="Permalink to this definition">¶</a></dt>
+<dt id="torch.nn.intrinsic.quantized.modules.LinearReLU">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.intrinsic.quantized.modules.</code><code class="sig-name descname">LinearReLU</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/intrinsic/quantized/modules/linear_relu.html#LinearReLU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.intrinsic.quantized.modules.LinearReLU" title="Permalink to this definition">¶</a></dt>
 <dd><p>A LinearReLU module fused from Linear and ReLU modules</p>
 <p>We adopt the same interface as <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.quantized.Linear</span></code>.</p>
 <dl class="field-list simple">
@@ -945,7 +990,7 @@ to align with post training flow, TODO: rename?</p></li>
 </dd>
 </dl>
 <p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">_intrinsic</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">intrinsic</span><span class="o">.</span><span class="n">LinearReLU</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
@@ -955,9 +1000,9 @@ to align with post training flow, TODO: rename?</p></li>
 </dd></dl>
 
 </div>
-</div>
 <div class="section" id="module-torch.nn.qat.modules">
-<span id="torch-nn-qat-modules"></span><h1>torch.nn.qat.modules<a class="headerlink" href="#module-torch.nn.qat.modules" title="Permalink to this headline">¶</a></h1>
+<span id="torch-nn-qat-modules"></span><h2>torch.nn.qat.modules<a class="headerlink" href="#module-torch.nn.qat.modules" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="conv2d">
 <h2>Conv2d<a class="headerlink" href="#conv2d" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -1022,10 +1067,10 @@ or directly from user</p>
 </dd></dl>
 
 </div>
-</div>
 <div class="section" id="module-torch.nn.quantized.functional">
-<span id="torch-nn-quantized"></span><h1>torch.nn.quantized<a class="headerlink" href="#module-torch.nn.quantized.functional" title="Permalink to this headline">¶</a></h1>
+<span id="torch-nn-quantized"></span><h2>torch.nn.quantized<a class="headerlink" href="#module-torch.nn.quantized.functional" title="Permalink to this headline">¶</a></h2>
 <p>Functional interface (quantized).</p>
+</div>
 <div class="section" id="functional-interface">
 <h2>Functional interface<a class="headerlink" href="#functional-interface" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -1335,6 +1380,9 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 <li><p>add</p></li>
 <li><p>cat</p></li>
 <li><p>mul</p></li>
+<li><p>add_relu</p></li>
+<li><p>add_scalar</p></li>
+<li><p>mul_scalar</p></li>
 </ul>
 </dd>
 </dl>
@@ -1359,6 +1407,9 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 <li><p>add</p></li>
 <li><p>cat</p></li>
 <li><p>mul</p></li>
+<li><p>add_relu</p></li>
+<li><p>add_scalar</p></li>
+<li><p>mul_scalar</p></li>
 </ul>
 </dd>
 </dl>
@@ -1465,18 +1516,18 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">PyTorch Quantization</a><ul>
-<li><a class="reference internal" href="#introduction-to-quantization">Introduction to Quantization</a><ul>
-<li><a class="reference internal" href="#quantized-representation">Quantized representation</a></li>
+<li><a class="reference internal" href="#">torch.quantization</a><ul>
+<li><a class="reference internal" href="#introduction-to-quantization">Introduction to Quantization</a></li>
+<li><a class="reference internal" href="#quantized-representation-and-operations">Quantized representation and operations</a><ul>
 <li><a class="reference internal" href="#quantized-tensor">Quantized Tensor</a></li>
+<li><a class="reference internal" href="#operation-coverage">Operation coverage</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#supported-quantization-techniques">Supported Quantization Techniques</a></li>
+<li><a class="reference internal" href="#quantization-workflows">Quantization Workflows</a><ul>
+<li><a class="reference internal" href="#model-preparation-for-quantization">Model preparation for quantization</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#code-structure">Code Structure</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-torch.quantization">torch.quantization</a><ul>
-<li><a class="reference internal" href="#initialization">Initialization</a></li>
 <li><a class="reference internal" href="#fake-quantize">Fake Quantize</a></li>
 <li><a class="reference internal" href="#fuse-modules">Fuse Modules</a></li>
 <li><a class="reference internal" href="#observer">Observer</a></li>
@@ -1490,26 +1541,18 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 <li><a class="reference internal" href="#dequant-stub">DeQuant Stub</a></li>
 <li><a class="reference internal" href="#quant-wrapper">Quant Wrapper</a></li>
 <li><a class="reference internal" href="#utility-functions">Utility Functions</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a><ul>
+<li><a class="reference internal" href="#module-torch.nn.intrinsic.qat.modules">torch.nn.instrinsic.qat.modules</a></li>
 <li><a class="reference internal" href="#convbn2d">ConvBn2d</a></li>
 <li><a class="reference internal" href="#convbnrelu2d">ConvBnReLU2d</a></li>
 <li><a class="reference internal" href="#convrelu2d">ConvReLU2d</a></li>
 <li><a class="reference internal" href="#linearrelu">LinearReLU</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a><ul>
+<li><a class="reference internal" href="#module-torch.nn.intrinsic.quantized.modules">torch.nn.intrinsic.quantized.modules</a></li>
 <li><a class="reference internal" href="#id9">ConvReLU2d</a></li>
 <li><a class="reference internal" href="#id10">LinearReLU</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-torch.nn.qat.modules">torch.nn.qat.modules</a><ul>
+<li><a class="reference internal" href="#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
 <li><a class="reference internal" href="#conv2d">Conv2d</a></li>
 <li><a class="reference internal" href="#linear">Linear</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-torch.nn.quantized.functional">torch.nn.quantized</a><ul>
+<li><a class="reference internal" href="#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
 <li><a class="reference internal" href="#functional-interface">Functional interface</a></li>
 <li><a class="reference internal" href="#id11">Linear</a></li>
 <li><a class="reference internal" href="#module-torch.nn.quantized.modules.activation">RNNBase</a></li>

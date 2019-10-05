@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+6b6249f )
+                  master (1.3.0a0+9c16518 )
                 </div>
               
             
@@ -199,12 +199,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../nn.init.html">torch.nn.init</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../onnx.html">torch.onnx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../optim.html">torch.optim</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">PyTorch Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.quantization">torch.quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.qat.modules">torch.nn._instrinsic.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn._intrinsic.quantized.modules">torch.nn._intrinsic.quantized.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.qat.modules">torch.nn.qat.modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html#module-torch.nn.quantized.functional">torch.nn.quantized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quantization.html">torch.quantization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../random.html">torch.random</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sparse.html">torch.sparse</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../storage.html">torch.Storage</a></li>
@@ -296,7 +291,7 @@
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="k">import</span> <span class="n">Module</span>
-<span class="kn">from</span> <span class="nn">.observer</span> <span class="k">import</span> <span class="n">MinMaxObserver</span><span class="p">,</span> <span class="n">_with_args</span>
+<span class="kn">from</span> <span class="nn">.observer</span> <span class="k">import</span> <span class="n">MinMaxObserver</span><span class="p">,</span> <span class="n">HistogramObserver</span><span class="p">,</span> <span class="n">PerChannelMinMaxObserver</span><span class="p">,</span> <span class="n">_with_args</span>
 
 <div class="viewcode-block" id="FakeQuantize"><a class="viewcode-back" href="../../../quantization.html#torch.quantization.FakeQuantize">[docs]</a><span class="k">class</span> <span class="nc">FakeQuantize</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Simulate the quantize and dequantize operations in training time.</span>
@@ -317,9 +312,7 @@
 
 <span class="sd">    * :attr:`observer_enable` controls statistics collection on tensors</span>
 
-<span class="sd">    * :attr:`dtype` specifies the quantized dtype that is being emulated with fake-quantization, </span>
-<span class="sd">                    allowable values are torch.qint8 and torch.quint8. The values of quant_min and </span>
-<span class="sd">                    quant_max should be chosen to be consistent with the dtype</span>
+<span class="sd">    * :attr:`dtype` specifies the quantized dtype that is being emulated with fake-quantization, allowable values are torch.qint8 and torch.quint8. The values of quant_min and quant_max should be chosen to be consistent with the dtype</span>
 
 
 <span class="sd">    Args:</span>
@@ -346,6 +339,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qscheme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="o">.</span><span class="n">qscheme</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ch_axis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="o">.</span><span class="n">ch_axis</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="p">,</span> <span class="s1">&#39;ch_axis&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
 
     <span class="k">def</span> <span class="nf">enable_fake_quant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fake_quant_enabled</span> <span class="o">=</span> <span class="n">enabled</span>
@@ -354,16 +349,28 @@
     <span class="k">def</span> <span class="nf">disable_fake_quant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_fake_quant</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">enable_observer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observer_enabled</span> <span class="o">=</span> <span class="n">enabled</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">disable_observer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_observer</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">calculate_qparams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer_enabled</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-            <span class="n">scale</span><span class="p">,</span> <span class="n">zero_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">zero_point</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">observer</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_qparams</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fake_quant_enabled</span><span class="p">:</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">fake_quantize_per_tensor_affine</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant_max</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">qscheme</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">per_channel_symmetric</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">qscheme</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">per_channel_affine</span><span class="p">:</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">fake_quantize_per_channel_affine</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">ch_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant_max</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">fake_quantize_per_tensor_affine</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">),</span>
+                                                          <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant_min</span><span class="p">,</span>
+                                                          <span class="bp">self</span><span class="o">.</span><span class="n">quant_max</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">X</span>
 
     <span class="n">with_args</span> <span class="o">=</span> <span class="nb">classmethod</span><span class="p">(</span><span class="n">_with_args</span><span class="p">)</span>
@@ -394,6 +401,19 @@
 <span class="n">default_weight_fake_quant</span> <span class="o">=</span> <span class="n">FakeQuantize</span><span class="o">.</span><span class="n">with_args</span><span class="p">(</span><span class="n">observer</span><span class="o">=</span><span class="n">MinMaxObserver</span><span class="p">,</span> <span class="n">quant_min</span><span class="o">=-</span><span class="mi">128</span><span class="p">,</span> <span class="n">quant_max</span><span class="o">=</span><span class="mi">127</span><span class="p">,</span>
                                                    <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="n">qscheme</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">per_tensor_symmetric</span><span class="p">,</span> <span class="n">reduce_range</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
+<span class="n">default_per_channel_weight_fake_quant</span> <span class="o">=</span> <span class="n">FakeQuantize</span><span class="o">.</span><span class="n">with_args</span><span class="p">(</span><span class="n">observer</span><span class="o">=</span><span class="n">PerChannelMinMaxObserver</span><span class="p">,</span>
+                                                               <span class="n">quant_min</span><span class="o">=-</span><span class="mi">128</span><span class="p">,</span>
+                                                               <span class="n">quant_max</span><span class="o">=</span><span class="mi">127</span><span class="p">,</span>
+                                                               <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span>
+                                                               <span class="n">qscheme</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">per_channel_symmetric</span><span class="p">,</span>
+                                                               <span class="n">reduce_range</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                               <span class="n">ch_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">default_histogram_fake_quant</span> <span class="o">=</span> <span class="n">FakeQuantize</span><span class="o">.</span><span class="n">with_args</span><span class="p">(</span><span class="n">observer</span><span class="o">=</span><span class="n">HistogramObserver</span><span class="p">,</span>
+                                                      <span class="n">quant_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                      <span class="n">quant_max</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span>
+                                                      <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">quint8</span><span class="p">,</span>
+                                                      <span class="n">qscheme</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">per_tensor_affine</span><span class="p">,</span>
+                                                      <span class="n">reduce_range</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">disable_fake_quant</span><span class="p">(</span><span class="n">mod</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="o">==</span> <span class="n">FakeQuantize</span><span class="p">:</span>
         <span class="n">mod</span><span class="o">.</span><span class="n">disable_fake_quant</span><span class="p">()</span>
@@ -408,7 +428,7 @@
 
 <span class="k">def</span> <span class="nf">enable_observer</span><span class="p">(</span><span class="n">mod</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="o">==</span> <span class="n">FakeQuantize</span><span class="p">:</span>
-        <span class="n">mod</span><span class="o">.</span><span class="n">disable_observer</span><span class="p">()</span>
+        <span class="n">mod</span><span class="o">.</span><span class="n">enable_observer</span><span class="p">()</span>
 </pre></div>
 
              </article>
