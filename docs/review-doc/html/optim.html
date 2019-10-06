@@ -130,7 +130,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+9c16518 )
+                  master (1.3.0a0+eb3f1e3 )
                 </div>
               
             
@@ -974,9 +974,10 @@ and not if they are functions or lambdas.</p>
 <dl class="class">
 <dt id="torch.optim.lr_scheduler.StepLR">
 <em class="property">class </em><code class="sig-prename descclassname">torch.optim.lr_scheduler.</code><code class="sig-name descname">StepLR</code><span class="sig-paren">(</span><em class="sig-param">optimizer</em>, <em class="sig-param">step_size</em>, <em class="sig-param">gamma=0.1</em>, <em class="sig-param">last_epoch=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/optim/lr_scheduler.html#StepLR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.optim.lr_scheduler.StepLR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the learning rate of each parameter group to the initial lr
-decayed by gamma every step_size epochs. When last_epoch=-1, sets
-initial lr as lr.</p>
+<dd><p>Decays the learning rate of each parameter group by gamma every
+step_size epochs. Notice that such decay can happen simultaneously with
+other changes to the learning rate from outside this scheduler. When
+last_epoch=-1, sets initial lr as lr.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1006,9 +1007,10 @@ Default: 0.1.</p></li>
 <dl class="class">
 <dt id="torch.optim.lr_scheduler.MultiStepLR">
 <em class="property">class </em><code class="sig-prename descclassname">torch.optim.lr_scheduler.</code><code class="sig-name descname">MultiStepLR</code><span class="sig-paren">(</span><em class="sig-param">optimizer</em>, <em class="sig-param">milestones</em>, <em class="sig-param">gamma=0.1</em>, <em class="sig-param">last_epoch=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/optim/lr_scheduler.html#MultiStepLR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.optim.lr_scheduler.MultiStepLR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the learning rate of each parameter group to the initial lr decayed
-by gamma once the number of epoch reaches one of the milestones. When
-last_epoch=-1, sets initial lr as lr.</p>
+<dd><p>Decays the learning rate of each parameter group by gamma once the
+number of epoch reaches one of the milestones. Notice that such decay can
+happen simultaneously with other changes to the learning rate from outside
+this scheduler. When last_epoch=-1, sets initial lr as lr.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1037,8 +1039,8 @@ Default: 0.1.</p></li>
 <dl class="class">
 <dt id="torch.optim.lr_scheduler.ExponentialLR">
 <em class="property">class </em><code class="sig-prename descclassname">torch.optim.lr_scheduler.</code><code class="sig-name descname">ExponentialLR</code><span class="sig-paren">(</span><em class="sig-param">optimizer</em>, <em class="sig-param">gamma</em>, <em class="sig-param">last_epoch=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/optim/lr_scheduler.html#ExponentialLR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.optim.lr_scheduler.ExponentialLR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the learning rate of each parameter group to the initial lr decayed
-by gamma every epoch. When last_epoch=-1, sets initial lr as lr.</p>
+<dd><p>Decays the learning rate of each parameter group by gamma every epoch.
+When last_epoch=-1, sets initial lr as lr.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1059,12 +1061,16 @@ schedule, where <span class="math"><span class="katex"><span class="katex-mathml
 <span class="math"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>T</mi><mrow><mi>c</mi><mi>u</mi><mi>r</mi></mrow></msub></mrow><annotation encoding="application/x-tex">T_{cur}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.68333em;"></span><span class="strut bottom" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">c</span><span class="mord mathit mtight">u</span><span class="mord mathit mtight" style="margin-right:0.02778em;">r</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span></span></span></span>
 </span> is the number of epochs since the last restart in SGDR:</p>
 <div class="math">
+</div><p>When last_epoch=-1, sets initial lr as lr. Notice that because the schedule
+is defined recursively, the learning rate can be simultaneously modified
+outside this scheduler by other operators. If the learning rate is set
+solely by this scheduler, the learning rate at each step becomes:</p>
+<div class="math">
 <span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>η</mi><mi>t</mi></msub><mo>=</mo><msub><mi>η</mi><mrow><mi>m</mi><mi>i</mi><mi>n</mi></mrow></msub><mo>+</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac><mo>(</mo><msub><mi>η</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub><mo>−</mo><msub><mi>η</mi><mrow><mi>m</mi><mi>i</mi><mi>n</mi></mrow></msub><mo>)</mo><mo>(</mo><mn>1</mn><mo>+</mo><mi>cos</mi><mo>(</mo><mfrac><mrow><msub><mi>T</mi><mrow><mi>c</mi><mi>u</mi><mi>r</mi></mrow></msub></mrow><mrow><msub><mi>T</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub></mrow></mfrac><mi>π</mi><mo>)</mo><mo>)</mo></mrow><annotation encoding="application/x-tex">\eta_t = \eta_{min} + \frac{1}{2}(\eta_{max} - \eta_{min})(1 +
 \cos(\frac{T_{cur}}{T_{max}}\pi))
 
 </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:1.36033em;"></span><span class="strut bottom" style="height:2.19633em;vertical-align:-0.8360000000000001em;"></span><span class="base"><span class="mord"><span class="mord mathit" style="margin-right:0.03588em;">η</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span><span class="mrel">=</span><span class="mord"><span class="mord mathit" style="margin-right:0.03588em;">η</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">m</span><span class="mord mathit mtight">i</span><span class="mord mathit mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span><span class="mbin">+</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathrm">2</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathrm">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathit" style="margin-right:0.03588em;">η</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">m</span><span class="mord mathit mtight">a</span><span class="mord mathit mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span><span class="mbin">−</span><span class="mord"><span class="mord mathit" style="margin-right:0.03588em;">η</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">m</span><span class="mord mathit mtight">i</span><span class="mord mathit mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span><span class="mclose">)</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mbin">+</span><span class="mop">cos</span><span class="mopen">(</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.36033em;"><span style="top:-2.3139999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">m</span><span class="mord mathit mtight">a</span><span class="mord mathit mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">c</span><span class="mord mathit mtight">u</span><span class="mord mathit mtight" style="margin-right:0.02778em;">r</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8360000000000001em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mord mathit" style="margin-right:0.03588em;">π</span><span class="mclose">)</span><span class="mclose">)</span></span></span></span></span>
-</div><p>When last_epoch=-1, sets initial lr as lr.</p>
-<p>It has been proposed in
+</div><p>It has been proposed in
 <a class="reference external" href="https://arxiv.org/abs/1608.03983">SGDR: Stochastic Gradient Descent with Warm Restarts</a>. Note that this only
 implements the cosine annealing part of SGDR, and not the restarts.</p>
 <dl class="field-list simple">

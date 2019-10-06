@@ -130,7 +130,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+9c16518 )
+                  master (1.3.0a0+eb3f1e3 )
                 </div>
               
             
@@ -293,17 +293,18 @@
 <h2>Introduction to Quantization<a class="headerlink" href="#introduction-to-quantization" title="Permalink to this headline">¶</a></h2>
 <p>Quantization refers to techniques for performing computations and storing tensors at lower bitwidths than
 floating point precision. A quantized model executes some or all of the operations on tensors with
-integers ( or optionally fp16)  rather than floating point values. This allows for a more
+integers rather than floating point values. This allows for a more
 compact model representation and the use of high performance vectorized
-operations on many hardware platforms. PyTorch supports INT8 and FP16
+operations on many hardware platforms. PyTorch supports INT8
 quantization compared to typical FP32 models allowing for a 4x reduction in the model size and
 a 4x reduction in memory bandwidth requirements.  Hardware support for  INT8 computations
 is typically 2 to 4 times faster compared to FP32 compute. Quantization is primarily a technique
 to speed up inference and only the forward pass is supported for quantized operators.</p>
-<p>In addition, PyTorch also supports quantization aware training, which models quantization errors
-in both the forward and backward passes using fake-quantization modules. Note that the entire
-computation is carried out in floating point. At the end of quantization aware training, pytorch
-provides conversion functions to convert the trained model into lower precision.</p>
+<p>PyTorch supports multiple approaches to quantizing a deep learning model. In most cases the model is trained
+in FP32 and then the model is converted to INT8. In addition, PyTorch also supports quantization aware
+training, which models quantization errors in both the forward and backward passes using fake-quantization
+modules. Note that the entire computation is carried out in floating point. At the end of quantization aware
+training, pytorch provides conversion functions to convert the trained model into lower precision.</p>
 <p>At lower level, PyTorch provides a way to represent quantized tensors and
 perform operations with them. They can be used to directly construct models that
 perform all or part of the computation in lower precision. Higher-level APIs are
@@ -337,11 +338,12 @@ allowing for serialization of data in a quantized format.</p>
 <p>Quantized tensors support a limited subset of data manipulation methods of the regular
 full-precision tensor. &lt;Link to quantized tensor documentation here&gt;</p>
 <p>For NN operators included in PyTorch, we restrict support to:</p>
-<ol class="arabic simple">
+<blockquote>
+<div><ol class="arabic simple">
 <li><p>8 bit weights (data\_type = qint8)</p></li>
+<li><p>8 bit activations (data\_type = quint8)</p></li>
 </ol>
-<p>2. 8 bit activations (data\_type = quint8)
-[Note: Bias is now in floating point in our APIs, removing this line below]</p>
+</div></blockquote>
 <p>Note that operator implementations currently only
 support per channel quantization for weights of the <strong>conv</strong> and <strong>linear</strong>
 operators. Furthermore the minimum and the maximum of the input data is
@@ -426,8 +428,8 @@ that will simulate quantization during training.</p></li>
 based on observed tensor data are provided, developers can provide their own
 quantization functions. Quantization can be applied selectively to different
 parts of the model or configured differently for different parts of the model.</p>
-<p>We also provide support for per channel quantization for <strong>conv2d</strong>\ ()
-and <strong>linear</strong>\ ()</p>
+<p>We also provide support for per channel quantization for <strong>conv2d()</strong>
+and <strong>linear()</strong></p>
 <p>Quantization workflows work by adding (e.g. adding observers as
 <code class="docutils literal notranslate"><span class="pre">.observer</span></code> submodule) or replacing (e.g. converting <code class="docutils literal notranslate"><span class="pre">nn.Conv2d</span></code> to
 <code class="docutils literal notranslate"><span class="pre">nn.quantized.Conv2d</span></code>) submodules in the model’s module hierarchy. It
@@ -448,9 +450,9 @@ process and thus can work with the rest of PyTorch APIs.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">torch.quantization</span></code> : this module implements the functions you call
 directly to convert your model from FP32 to quantized form. For
-example the <strong>prepare() **\ method is used in post training
+example the <strong>prepare()</strong> method is used in post training
 quantization to prepares your model for the calibration step and the
-**convert()</strong> method actually converts the weights to int8 and
+<strong>convert()</strong> method actually converts the weights to int8 and
 replaces the operations with their quantized counterparts. There are
 other helper functions for things like quantizing the input to your
 model and performing critical fusions like conv+relu.</p></li>
@@ -459,7 +461,7 @@ implementations of the nn functions such as <strong>conv2d()</strong> and
 <strong>ReLU()</strong>. It also contains the functions to convert tensors to and
 from quantized form.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.qat.modules</span></code>: This module implements versions of the key nn
-modules <strong>Conv2d</strong>\ () and <strong>Linear</strong>\ () which will run in FP32
+modules <strong>Conv2d()</strong> and <strong>Linear()</strong> which will run in FP32
 but with rounding applied to simulate the effect of INT8
 quantization.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">torch.nn.intrinsic.modules</span></code>: This module implements the combined (fused)
@@ -477,7 +479,7 @@ of those fused operations needed for quantization aware training.</p></li>
 <h2>Fake Quantize<a class="headerlink" href="#fake-quantize" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torch.quantization.FakeQuantize">
-<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">FakeQuantize</code><span class="sig-paren">(</span><em class="sig-param">observer=&lt;class 'torch.quantization.observer.MinMaxObserver'&gt;</em>, <em class="sig-param">quant_min=0</em>, <em class="sig-param">quant_max=255</em>, <em class="sig-param">**observer_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/fake_quantize.html#FakeQuantize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.FakeQuantize" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torch.quantization.</code><code class="sig-name descname">FakeQuantize</code><span class="sig-paren">(</span><em class="sig-param">observer=&lt;class 'torch.quantization.observer.MovingAverageMinMaxObserver'&gt;</em>, <em class="sig-param">quant_min=0</em>, <em class="sig-param">quant_max=255</em>, <em class="sig-param">**observer_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/quantization/fake_quantize.html#FakeQuantize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.quantization.FakeQuantize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simulate the quantize and dequantize operations in training time.
 The output of this module is given by</p>
 <p>x_out = (clamp(round(x/scale + zero_point), quant_min, quant_max)-zero_point)*scale</p>
@@ -1080,8 +1082,16 @@ or directly from user</p>
 <dl class="function">
 <dt id="torch.nn.quantized.functional.relu">
 <code class="sig-prename descclassname">torch.nn.quantized.functional.</code><code class="sig-name descname">relu</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span> &#x2192; Tensor<a class="reference internal" href="_modules/torch/nn/quantized/functional.html#relu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.functional.relu" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies the rectified linear unit function element-wise. See
-<a class="reference internal" href="nn.html#torch.nn.ReLU" title="torch.nn.ReLU"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReLU</span></code></a> for more details.</p>
+<dd><p>Applies the rectified linear unit function element-wise.
+See <code class="xref py py-class docutils literal notranslate"><span class="pre">ReLU</span></code> for more details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> – quantized input</p></li>
+<li><p><strong>inplace</strong> – perform the computation inplace</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -1090,10 +1100,10 @@ or directly from user</p>
 <dd><p>Applies a linear transformation to the incoming quantized data:
 <span class="math"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>y</mi><mo>=</mo><mi>x</mi><msup><mi>A</mi><mi>T</mi></msup><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">y = xA^T + b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.8413309999999999em;"></span><span class="strut bottom" style="height:1.035771em;vertical-align:-0.19444em;"></span><span class="base"><span class="mord mathit" style="margin-right:0.03588em;">y</span><span class="mrel">=</span><span class="mord mathit">x</span><span class="mord"><span class="mord mathit">A</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8413309999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight" style="margin-right:0.13889em;">T</span></span></span></span></span></span></span></span><span class="mbin">+</span><span class="mord mathit">b</span></span></span></span>
 </span>.
-See <a class="reference internal" href="nn.html#torch.nn.Linear" title="torch.nn.Linear"><code class="xref py py-class docutils literal notranslate"><span class="pre">Linear</span></code></a></p>
+See <code class="xref py py-class docutils literal notranslate"><span class="pre">Linear</span></code></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Current implementation uses packed weights. This has penalty on performance.
+<p>Current implementation packs weights on every call, which has penalty on performance.
 If you want to avoid the overhead, use <code class="xref py py-class docutils literal notranslate"><span class="pre">Linear</span></code>.</p>
 </div>
 <dl class="field-list simple">
@@ -1126,16 +1136,9 @@ additional dimensions</p></li>
 <dl class="function">
 <dt id="torch.nn.quantized.functional.conv2d">
 <code class="sig-prename descclassname">torch.nn.quantized.functional.</code><code class="sig-name descname">conv2d</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">weight</em>, <em class="sig-param">bias</em>, <em class="sig-param">stride=1</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">groups=1</em>, <em class="sig-param">padding_mode='zeros'</em>, <em class="sig-param">scale=1.0</em>, <em class="sig-param">zero_point=0</em>, <em class="sig-param">dtype=torch.quint8</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/quantized/functional.html#conv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.functional.conv2d" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>conv2d(input, weight, bias,</dt><dd><p>stride=1, padding=0, dilation=1, groups=1,
-padding_mode=’zeros’,
-scale=1.0, zero_point=0,
-dtype=torch.quint8) -&gt; Tensor</p>
-</dd>
-</dl>
-<p>Applies a 2D convolution over a quantized 2D input composed of several input
+<dd><p>Applies a 2D convolution over a quantized 2D input composed of several input
 planes.</p>
-<p>See <a class="reference internal" href="nn.html#torch.nn.Conv2d" title="torch.nn.Conv2d"><code class="xref py py-class docutils literal notranslate"><span class="pre">Conv2d</span></code></a> for details and output shape.</p>
+<p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">Conv2d</span></code> for details and output shape.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1182,6 +1185,10 @@ number of groups. Default: 1</p></li>
 <code class="sig-prename descclassname">torch.nn.quantized.functional.</code><code class="sig-name descname">max_pool2d</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">kernel_size</em>, <em class="sig-param">stride=None</em>, <em class="sig-param">padding=0</em>, <em class="sig-param">dilation=1</em>, <em class="sig-param">ceil_mode=False</em>, <em class="sig-param">return_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/quantized/functional.html#max_pool2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.functional.max_pool2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Applies a 2D max pooling over a quantized input signal composed of
 several quantized input planes.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The input quantization parameters are propagated to the output.</p>
+</div>
 <p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">MaxPool2d</span></code> for details.</p>
 </dd></dl>
 
@@ -1474,6 +1481,51 @@ one of the underlying functions (e.g. <code class="docutils literal notranslate"
 </div>
 <div class="section" id="id13">
 <h2>Linear<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="torch.nn.quantized.modules.linear.Linear">
+<em class="property">class </em><code class="sig-prename descclassname">torch.nn.quantized.modules.linear.</code><code class="sig-name descname">Linear</code><span class="sig-paren">(</span><em class="sig-param">in_features</em>, <em class="sig-param">out_features</em>, <em class="sig-param">bias_=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/quantized/modules/linear.html#Linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.modules.linear.Linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>A quantized linear module with quantized tensor as inputs and outputs.
+We adopt the same interface as <cite>torch.nn.Linear</cite>, please see
+<a class="reference external" href="https://pytorch.org/docs/stable/nn.html#torch.nn.Linear">https://pytorch.org/docs/stable/nn.html#torch.nn.Linear</a> for documentation.</p>
+<p>Similar to <a class="reference internal" href="nn.html#torch.nn.Linear" title="torch.nn.Linear"><code class="xref py py-class docutils literal notranslate"><span class="pre">Linear</span></code></a>, attributes will be randomly
+initialized at module creation time and will be overwritten later</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>~Linear.weight</strong> (<a class="reference internal" href="tensors.html#torch.Tensor" title="torch.Tensor"><em>Tensor</em></a>) – the non-learnable quantized weights of the module of
+shape <span class="math"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo>(</mo><mtext>out_features</mtext><mo separator="true">,</mo><mtext>in_features</mtext><mo>)</mo></mrow><annotation encoding="application/x-tex">(\text{out\_features}, \text{in\_features})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1.06em;vertical-align:-0.31em;"></span><span class="base"><span class="mopen">(</span><span class="mord text"><span class="mord mathrm">out_features</span></span><span class="mpunct">,</span><span class="mord text"><span class="mord mathrm">in_features</span></span><span class="mclose">)</span></span></span></span>
+</span>.</p></li>
+<li><p><strong>~Linear.bias</strong> (<a class="reference internal" href="tensors.html#torch.Tensor" title="torch.Tensor"><em>Tensor</em></a>) – the non-learnable bias of the module of shape <span class="math"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo>(</mo><mtext>out_features</mtext><mo>)</mo></mrow><annotation encoding="application/x-tex">(\text{out\_features})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1.06em;vertical-align:-0.31em;"></span><span class="base"><span class="mopen">(</span><span class="mord text"><span class="mord mathrm">out_features</span></span><span class="mclose">)</span></span></span></span>
+</span>.
+If <code class="xref py py-attr docutils literal notranslate"><span class="pre">bias</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the values are initialized to zero.</p></li>
+<li><p><strong>~Linear.scale</strong> – <cite>scale</cite> parameter of output Quantized Tensor, type: double</p></li>
+<li><p><strong>~Linear.zero_point</strong> – <cite>zero_point</cite> parameter for output Quantized Tensor, type: long</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantize_per_tensor</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">quint8</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+<span class="go">torch.Size([128, 30])</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="torch.nn.quantized.modules.linear.Linear.from_float">
+<em class="property">classmethod </em><code class="sig-name descname">from_float</code><span class="sig-paren">(</span><em class="sig-param">mod</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torch/nn/quantized/modules/linear.html#Linear.from_float"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torch.nn.quantized.modules.linear.Linear.from_float" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a quantized module from a float module or qparams_dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mod</strong> (<a class="reference internal" href="nn.html#torch.nn.Module" title="torch.nn.Module"><em>Module</em></a>) – a float module, either produced by torch.quantization
+utilities or provided by the user</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 

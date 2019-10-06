@@ -128,7 +128,7 @@
               
               
                 <div class="version">
-                  master (1.3.0a0+9c16518 )
+                  master (1.3.0a0+eb3f1e3 )
                 </div>
               
             
@@ -303,7 +303,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn.modules.utils</span> <span class="k">import</span> <span class="n">_pair</span>
 <span class="kn">from</span> <span class="nn">torch.nn.quantized.modules.utils</span> <span class="k">import</span> <span class="n">_quantize_weight</span>
 
-<div class="viewcode-block" id="Conv2d"><a class="viewcode-back" href="../../../../../quantization.tmp.html#torch.nn.quantized.modules.conv.Conv2d">[docs]</a><span class="k">class</span> <span class="nc">Conv2d</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Conv2d"><a class="viewcode-back" href="../../../../../quantization.html#torch.nn.quantized.modules.conv.Conv2d">[docs]</a><span class="k">class</span> <span class="nc">Conv2d</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies a 2D convolution over a quantized input signal composed of</span>
 <span class="sd">    several quantized input planes.</span>
 
@@ -493,7 +493,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zero_point</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span>
 
-<div class="viewcode-block" id="Conv2d.from_float"><a class="viewcode-back" href="../../../../../quantization.tmp.html#torch.nn.quantized.modules.conv.Conv2d.from_float">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Conv2d.from_float"><a class="viewcode-back" href="../../../../../quantization.html#torch.nn.quantized.modules.conv.Conv2d.from_float">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_float</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Creates a quantized module from a float module or qparams_dict.</span>
 
