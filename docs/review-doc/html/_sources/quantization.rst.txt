@@ -14,11 +14,11 @@ a 4x reduction in memory bandwidth requirements.  Hardware support for  INT8 com
 is typically 2 to 4 times faster compared to FP32 compute. Quantization is primarily a technique
 to speed up inference and only the forward pass is supported for quantized operators.
 
-PyTorch supports multiple approaches to quantizing a deep learning model. In most cases the model is trained 
-in FP32 and then the model is converted to INT8. In addition, PyTorch also supports quantization aware 
-training, which models quantization errors in both the forward and backward passes using fake-quantization 
-modules. Note that the entire computation is carried out in floating point. At the end of quantization aware 
-training, pytorch provides conversion functions to convert the trained model into lower precision.
+PyTorch supports multiple approaches to quantizing a deep learning model. In most cases the model is trained
+in FP32 and then the model is converted to INT8. In addition, PyTorch also supports quantization aware
+training, which models quantization errors in both the forward and backward passes using fake-quantization
+modules. Note that the entire computation is carried out in floating point. At the end of quantization aware
+training, PyTorch provides conversion functions to convert the trained model into lower precision.
 
 At lower level, PyTorch provides a way to represent quantized tensors and
 perform operations with them. They can be used to directly construct models that
@@ -39,7 +39,7 @@ to quantized values.
 
 The mapping is performed by converting the floating point tensors using
 
-***include image of the formula from the design doc here***
+**include image of the formula from the design doc here**
 
 Note that, we ensure that zero in floating point is repsresented with no error after quantization,
 thereby ensuring that operations like padding do not cause additional quantization error.
@@ -72,8 +72,7 @@ mapped linearly to the minimum and the maximum of the quantized data
 type such that zero is represented with no quantization error.
 
 Additional data types and quantization schemes can be implemented through
-the custom operator mechanism.
-[Note: Will be good to point a link here]
+the `custom operator mechanism <https://pytorch.org/tutorials/advanced/torch_script_custom_ops.html>`.
 
 Many operations for quantized tensors are available under the same API as full
 float version in ``torch`` or ``torch.nn``. Quantized version of NN modules that
@@ -84,7 +83,7 @@ the operation signature.
 Current quantized operation list is sufficient to cover typical CNN and RNN
 models:
 
-TODO: explicit list here
+**NOTE  explicit list here**
 
 Quantization Workflows
 ----------------------
@@ -99,7 +98,7 @@ PyTorch provides three approaches to quantize models.
    This is true for for LSTM and Transformer type models with small
    batch size. Applying dynamic quantization to a whole model can be
    done with a single call to torch.quantization.quantize\\_dynamic().
-   See the ***tutorial-link-here***\\ *. *
+   See the `<https://pytorch.org/tutorials/#Quantization_Experimental>` **NOTE NEEDS REVISION**
 2. Post Training Quantization: This is the most commonly used form of
    quantization where the weights are quantized ahead of time and the
    scale factor and bias for the activation tensors is pre-computed
@@ -128,7 +127,7 @@ PyTorch provides three approaches to quantize models.
       quantizes the weights, computes and stores the scale and bias
       value to be used each activation tensor, and replaces key
       operators quantized implementations.
-   7. See the ***tutorial-link-here ***\\ for more information\\ *. *
+   See the `<https://pytorch.org/tutorials/#Quantization_Experimental>` **NOTE NEEDS REVISION**
 
 3. Quantization Aware Training: In the rare cases where post training
    quantization does not provide adequate accuracy training can be done
@@ -148,7 +147,7 @@ PyTorch provides three approaches to quantize models.
    5. Train or fine tune the model.
    6. Identical to step (6) for post training quantization
 
-   7. See the ***tutorial-link-here ***\\ for more information\\ *. *
+   See the `<https://pytorch.org/tutorials/#Quantization_Experimental>` **NOTE NEEDS REVISION**
 
 While default implementations of observers to select the scale factor and bias
 based on observed tensor data are provided, developers can provide their own
@@ -167,7 +166,8 @@ process and thus can work with the rest of PyTorch APIs.
 Model preparation for quantization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TODO:
+**NOTE we are missing text here **
+
 - fusion
 - replacement of modules with FloatFunctional
 - QuantStub
@@ -207,59 +207,59 @@ torch.quantization
 .. automodule:: torch.quantization
 
 Fake Quantize
---------------
+~~~~~~~~~~~~~~~
 .. autoclass:: FakeQuantize
 
 Fuse Modules
--------------
+~~~~~~~~~~~~~~~
 .. autofunction:: fuse_conv_bn
 .. autofunction:: fuse_conv_bn_relu
 .. autofunction:: _fuse_modules
 .. autofunction:: fuse_modules
 
 Observer
----------
+~~~~~~~~~~~~~~~
 .. autoclass:: Observer
 
 Observer Base
---------------
+~~~~~~~~~~~~~~~
 .. autoclass:: ObserverBase
 .. autofunction:: _calculate_qparams
 
 Min Max Observer
-----------------
+~~~~~~~~~~~~~~~
 .. autoclass:: MinMaxObserver
 
 Per Channel Min Max Observer
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: PerChannelMinMaxObserver
 
 Histogram Observer
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: HistogramObserver
 
 Recording Observer
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: RecordingObserver
 
 Noop Observer
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: NoopObserver
 
 Quant Stub
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: QuantStub
 
 DeQuant Stub
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: DeQuantStub
 
 Quant Wrapper
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: QuantWrapper
 
 Utility Functions
-------------------
+~~~~~~~~~~~~~~~
 .. autofunction:: propagate_qconfig_helper
 .. autofunction:: propagate_qconfig
 .. autofunction:: _observer_forward_hook
@@ -279,22 +279,22 @@ torch.nn.instrinsic.qat.modules
 .. automodule:: torch.nn.intrinsic.qat.modules
 
 ConvBn2d
---------
+~~~~~~~~~~~~~~~
 .. autoclass:: ConvBn2d
     :members:
 
 ConvBnReLU2d
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: ConvBnReLU2d
     :members:
 
 ConvReLU2d
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: ConvReLU2d
     :members:
 
 LinearReLU
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: LinearReLU
     :members:
 
@@ -303,12 +303,12 @@ torch.nn.intrinsic.quantized.modules
 .. automodule:: torch.nn.intrinsic.quantized.modules
 
 ConvReLU2d
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: ConvReLU2d
     :members:
 
 LinearReLU
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: LinearReLU
     :members:
 
@@ -317,12 +317,12 @@ torch.nn.qat.modules
 .. automodule:: torch.nn.qat.modules
 
 Conv2d
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: Conv2d
     :members:
 
 Linear
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: Linear
     :members:
 
@@ -332,7 +332,7 @@ torch.nn.quantized
 .. automodule:: torch.nn.quantized.functional
 
 Functional interface
----------------------
+~~~~~~~~~~~~~~~
 .. autofunction:: relu
 .. autofunction:: linear
 .. autofunction:: conv2d
@@ -341,59 +341,59 @@ Functional interface
 .. automodule:: torch.nn.quantized.dynamic.modules
 
 Linear
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: Linear
     :members:
 
 RNNBase
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: RNNBase
     :members:
 
 .. automodule:: torch.nn.quantized.modules.activation
 
 ReLU
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: ReLU
     :members:
 
 ReLU6
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: ReLU6
     :members:
 
 .. automodule:: torch.nn.quantized.modules.conv
 
 Conv2d
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: Conv2d
     :members:
 
 .. automodule:: torch.nn.quantized.modules.functional_modules
 
 Float Functional
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: FloatFunctional
     :members:
 
 QFunctional
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: QFunctional
     :members:
 
 .. automodule:: torch.nn.quantized.modules.linear
 
 Quantize
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: Quantize
     :members:
 
 DeQuantize
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: DeQuantize
     :members:
 
 Linear
-------------------
+~~~~~~~~~~~~~~~
 .. autoclass:: Linear
     :members:
